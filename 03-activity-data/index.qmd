@@ -231,6 +231,7 @@ plot(cube_s2_reg,
 #| warning: false
 #| error: false
 #| echo: false
+#| eval: false
 
 # Access local data cube
 cube_s2_reg <- sits::sits_cube(
@@ -257,7 +258,7 @@ plot(cube_s2_reg,
 #| warning: false
 #| error: false
 #| echo: false
-#| eval: false
+#| eval: true
 
 # Files are also available remotely from sitsdata directory 
 data_dir <- system.file("extdata/Rondonia-20LMR/", package = "sitsdata")
