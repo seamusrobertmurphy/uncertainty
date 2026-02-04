@@ -637,7 +637,7 @@ equation_metadata |>
 *Table X: Equation Selection Documentation for REDD+ MRV*
 
 |  |  |
-|------------------------------------|------------------------------------|
+|----|----|
 | Attribute | Detail |
 | Equation Taxa/ID | *Quercus* spp. (Genus-level) |
 | Biomass Method | Non-destructive estimation using Terrestrial Laser Scanning (TLS) or Terrestrial LiDAR to model tree volume, which was then converted to biomass using published wood density values. |
@@ -647,7 +647,7 @@ equation_metadata |>
 | Citation | Stovall, A. E., Anderson-Teixeira, K. J., & Shugart, H. H. (2018). Terrestrial LiDAR-derived non-destructive woody biomass estimates for 10 hardwood species in Virginia. *Data in brief*, *19*, 1560-1569 |
 
 |  |  |
-|------------------------------------|------------------------------------|
+|----|----|
 | Attribute | Detail |
 | Equation Taxa/ID | Quercus rubra (Species-level) |
 | Biomass Method | Destructive Harvesting (Dimensional Analysis). The traditional method involving felling, weighing, and drying tree components to directly measure biomass. |
