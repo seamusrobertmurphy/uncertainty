@@ -81,7 +81,7 @@ div.csl-indent {
 <script src="../site_libs/quarto-search/fuse.min.js"></script>
 <script src="../site_libs/quarto-search/quarto-search.js"></script>
 <meta name="quarto:offset" content="../">
-<link href="../references/index.html" rel="next">
+<link href="../AA-Appendix/primers.html" rel="next">
 <link href="../03-activity-data/index.html" rel="prev">
 <script src="../site_libs/quarto-html/quarto.js" type="module"></script>
 <script src="../site_libs/quarto-html/tabsets/tabsets.js" type="module"></script>
@@ -216,6 +216,11 @@ window.Quarto = {
       <ul id="quarto-sidebar-section-1" class="collapse list-unstyled sidebar-section depth1 show">
 <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../AA-Appendix/primers.html" class="sidebar-item-text sidebar-link"><span class="chapter-title">Uncertainty Primers</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../references/index.html" class="sidebar-item-text sidebar-link"><span class="chapter-title">References</span></a>
   </div>
 </li>
@@ -248,24 +253,25 @@ window.Quarto = {
   <li>
 <a href="#simulation-design" id="toc-simulation-design" class="nav-link" data-scroll-target="#simulation-design">4.1 Simulation Design</a>
   <ul class="collapse">
-<li><a href="#baseline-treatment" id="toc-baseline-treatment" class="nav-link" data-scroll-target="#baseline-treatment">Baseline Treatment</a></li>
+<li><a href="#temporal-dimensions" id="toc-temporal-dimensions" class="nav-link" data-scroll-target="#temporal-dimensions">Temporal Dimensions</a></li>
+  <li><a href="#baseline-treatment" id="toc-baseline-treatment" class="nav-link" data-scroll-target="#baseline-treatment">Baseline Treatment</a></li>
   </ul>
 </li>
   <li>
-<a href="#uncertainty-source-prioritization" id="toc-uncertainty-source-prioritization" class="nav-link" data-scroll-target="#uncertainty-source-prioritization">4.2 Uncertainty Source Prioritization</a>
+<a href="#ranking-uncertainty-sources" id="toc-ranking-uncertainty-sources" class="nav-link" data-scroll-target="#ranking-uncertainty-sources">4.2 Ranking Uncertainty Sources</a>
   <ul class="collapse">
 <li><a href="#sensitivity-analysis" id="toc-sensitivity-analysis" class="nav-link" data-scroll-target="#sensitivity-analysis">Sensitivity Analysis</a></li>
   </ul>
 </li>
   <li>
-<a href="#optimization-strategies" id="toc-optimization-strategies" class="nav-link" data-scroll-target="#optimization-strategies">4.3 Optimization Strategies</a>
+<a href="#reducing-uncertainty" id="toc-reducing-uncertainty" class="nav-link" data-scroll-target="#reducing-uncertainty">4.3 Reducing Uncertainty</a>
   <ul class="collapse">
 <li><a href="#bootstrap-sampling" id="toc-bootstrap-sampling" class="nav-link" data-scroll-target="#bootstrap-sampling">Bootstrap Sampling</a></li>
   <li><a href="#temporal-aggregation" id="toc-temporal-aggregation" class="nav-link" data-scroll-target="#temporal-aggregation">Temporal Aggregation</a></li>
   </ul>
 </li>
   <li>
-<a href="#worked-example-jurisdictional-program" id="toc-worked-example-jurisdictional-program" class="nav-link" data-scroll-target="#worked-example-jurisdictional-program">4.4 Worked Example: Jurisdictional Program</a>
+<a href="#worked-example" id="toc-worked-example" class="nav-link" data-scroll-target="#worked-example">4.4 Worked Example</a>
   <ul class="collapse">
 <li><a href="#multi-source-integration" id="toc-multi-source-integration" class="nav-link" data-scroll-target="#multi-source-integration">Multi-Source Integration</a></li>
   </ul>
@@ -291,12 +297,12 @@ window.Quarto = {
 
 
 </header><section id="overview" class="level2 unnumbered"><h2 class="unnumbered anchored" data-anchor-id="overview">Overview</h2>
-<p>Monte Carlo simulation aggregates uncertainties from activity data (Chapter 3), emission factors (Chapter 2), and allometric equations (Chapter 1) into a single conservativeness deduction for ART-TREES credit issuance. This chapter demonstrates compliant simulation design, presents worked examples achieving 20-50% uncertainty reductions through strategic optimization, and provides decision frameworks for maximizing credit revenue under Section 8 requirements.</p>
-<p>ART-TREES Section 8 mandates Monte Carlo Approach 2 with minimum 10,000 iterations, 90% confidence intervals, and bootstrap sampling for unknown probability distributions <span class="citation" data-cites="artREDDEnvironmentalExcellence2021">(<a href="../references/index.html#ref-artREDDEnvironmentalExcellence2021" role="doc-biblioref">ART, 2021</a>)</span>. The simulation calculates the Uncertainty Adjustment Factor (UAF) from the half-width of emission distribution confidence intervals:</p>
+<p>Monte Carlo simulation combines the uncertainties in activity data (Chapter 3), emission factors (Chapter 2) and allometric equations (Chapter 1) into a single conservativeness deduction, the share of emission reductions withheld from credit issuance under ART-TREES. This chapter sets out a simulation design that meets the standard, presents worked examples in which uncertainty fell by 20 to 50 per cent through targeted improvement, and gives the reasoning for choosing where to invest under the Section 8 requirements.</p>
+<p>ART-TREES Section 8 requires Monte Carlo Approach 2 with at least 10,000 iterations, 90 per cent confidence intervals, and bootstrap sampling where the probability distribution of an input is unknown <span class="citation" data-cites="artREDDEnvironmentalExcellence2021">(<a href="../references/index.html#ref-artREDDEnvironmentalExcellence2021" role="doc-biblioref">ART, 2021</a>)</span>. The simulation calculates the uncertainty adjustment factor (UAF) from the half-width of the confidence interval around simulated emissions.</p>
 <p><span class="math display">\[
 UA_t = 0.524417 \times \frac{HW_{90\%}}{1.645006}
 \]</span></p>
-<p>Where <span class="math inline">\(HW_{90\%}\)</span> represents the half-width of the 90% confidence interval around mean emissions. This UAF then determines the conservativeness deduction applied to creditable emissions.</p>
+<p>Here <span class="math inline">\(HW_{90\%}\)</span> is the half-width of the 90 per cent confidence interval around mean emissions, and the resulting UAF sets the conservativeness deduction applied to creditable emissions.</p>
 <section id="environment-setup" class="level3 unnumbered"><h3 class="unnumbered anchored" data-anchor-id="environment-setup">Environment Setup</h3>
 <div class="cell">
 <details class="code-fold"><summary>View Code</summary><div class="sourceCode" id="cb1"><pre class="downlit sourceCode r code-with-copy"><code class="sourceCode R"><span><span class="fu">easypackages</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/easypackages/man/packages.html">packages</a></span><span class="op">(</span></span>
@@ -314,8 +320,8 @@ UA_t = 0.524417 \times \frac{HW_{90\%}}{1.645006}
 </details>
 </div>
 </section></section><section id="simulation-design" class="level2"><h2 class="anchored" data-anchor-id="simulation-design">4.1 Simulation Design</h2>
-<p>Temporal Dimensions</p>
-<p>ART-TREES permits single-year or multi-year aggregation. Program participants may recognize that single-year simulations tend to reduce uncertainty by avoiding temporal error propagation. We discuss below some of the advantages and disadvantages in applying similar adjustments and aggregations to Monte Carlo simulated estimates.</p>
+<section id="temporal-dimensions" class="level3"><h3 class="anchored" data-anchor-id="temporal-dimensions">Temporal Dimensions</h3>
+<p>ART-TREES permits simulation over a single year or aggregation over several years, and single-year simulation tends to give lower uncertainty because errors do not accumulate across years. The advantages and disadvantages of each design are set out in section 4.3, and the single-year function below is the recommended form.</p>
 <div class="cell">
 <details class="code-fold"><summary>View Code</summary><div class="sourceCode" id="cb2"><pre class="downlit sourceCode r code-with-copy"><code class="sourceCode R"><span><span class="co"># Single-year simulation (RECOMMENDED)</span></span>
 <span><span class="va">simulate_single_year</span> <span class="op">&lt;-</span> <span class="kw">function</span><span class="op">(</span><span class="va">n_sim</span> <span class="op">=</span> <span class="fl">10000</span>, <span class="va">year_data</span><span class="op">)</span> <span class="op">{</span></span>
@@ -363,10 +369,11 @@ UA_t = 0.524417 \times \frac{HW_{90\%}}{1.645006}
 <span><span class="co">## Uncertainty Adjustment Factor: 0.113</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </details>
 </div>
-<section id="baseline-treatment" class="level3"><h3 class="anchored" data-anchor-id="baseline-treatment">Baseline Treatment</h3>
-<p>Use the arithmetic mean of verified historical emissions as deterministic baseline, avoiding stochastic variance. For example, country X computed their HFLDCL as 21,037,534 tCO₂ rather than simulating historical variability <span class="citation" data-cites="artREDDEnvironmentalExcellence2021">(<a href="../references/index.html#ref-artREDDEnvironmentalExcellence2021" role="doc-biblioref">ART, 2021, Section 8.4</a>)</span>.</p>
-</section></section><section id="uncertainty-source-prioritization" class="level2"><h2 class="anchored" data-anchor-id="uncertainty-source-prioritization">4.2 Uncertainty Source Prioritization</h2>
+</section><section id="baseline-treatment" class="level3"><h3 class="anchored" data-anchor-id="baseline-treatment">Baseline Treatment</h3>
+<p>The baseline is the arithmetic mean of verified historical emissions, treated as a fixed value rather than a simulated one, so that it adds no variance of its own. Country X, for example, set its high forest low deforestation crediting level (HFLDCL) at 21,037,534 tCO₂ rather than simulating the variation between historical years <span class="citation" data-cites="artREDDEnvironmentalExcellence2021">(<a href="../references/index.html#ref-artREDDEnvironmentalExcellence2021" role="doc-biblioref">ART, 2021, Section 8.4</a>)</span>.</p>
+</section></section><section id="ranking-uncertainty-sources" class="level2"><h2 class="anchored" data-anchor-id="ranking-uncertainty-sources">4.2 Ranking Uncertainty Sources</h2>
 <section id="sensitivity-analysis" class="level3"><h3 class="anchored" data-anchor-id="sensitivity-analysis">Sensitivity Analysis</h3>
+<p>The sensitivity analysis below halves the activity data uncertainty, the emission factor uncertainty, and both together, and reports the UAF under each scenario so that the dominant source can be identified.</p>
 <div class="cell">
 <details class="code-fold"><summary>View Code</summary><div class="sourceCode" id="cb3"><pre class="downlit sourceCode r code-with-copy"><code class="sourceCode R"><span><span class="co"># Sensitivity analysis across uncertainty sources</span></span>
 <span><span class="va">sensitivity_analysis</span> <span class="op">&lt;-</span> <span class="kw">function</span><span class="op">(</span><span class="va">base_scenario</span>, <span class="va">n_sim</span> <span class="op">=</span> <span class="fl">10000</span><span class="op">)</span> <span class="op">{</span></span>
@@ -402,10 +409,10 @@ UA_t = 0.524417 \times \frac{HW_{90\%}}{1.645006}
 <span><span class="co">## low_both   X[[i]] 0.05693012  17.85800</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </details>
 </div>
-<p>For jurisdictions where emission factor uncertainty dominates (typical in Tier 1 approaches), investments in plot-based Tier 2 emission factors yield greater UAF reductions than marginal improvements in classification accuracy.</p>
-</section></section><section id="optimization-strategies" class="level2"><h2 class="anchored" data-anchor-id="optimization-strategies">4.3 Optimization Strategies</h2>
+<p>Where emission factor uncertainty dominates, as it usually does under Tier 1 defaults, investment in plot-based Tier 2 emission factors lowers the UAF by more than a small gain in classification accuracy would.</p>
+</section></section><section id="reducing-uncertainty" class="level2"><h2 class="anchored" data-anchor-id="reducing-uncertainty">4.3 Reducing Uncertainty</h2>
 <section id="bootstrap-sampling" class="level3"><h3 class="anchored" data-anchor-id="bootstrap-sampling">Bootstrap Sampling</h3>
-<p>When probability distributions are unknown, ART-TREES requires bootstrap resampling. Efficient implementation draws samples from empirical error distributions:</p>
+<p>Where the probability distribution of an input is unknown, ART-TREES requires bootstrap resampling, which draws repeated samples from the observed errors instead of from an assumed distribution. The function below draws the true forest area from a binomial distribution set by the user’s accuracy of the map.</p>
 <div class="cell">
 <details class="code-fold"><summary>View Code</summary><div class="sourceCode" id="cb4"><pre class="downlit sourceCode r code-with-copy"><code class="sourceCode R"><span><span class="co"># Bootstrap activity data from confusion matrix</span></span>
 <span><span class="va">bootstrap_activity_data</span> <span class="op">&lt;-</span> <span class="kw">function</span><span class="op">(</span><span class="va">n_sim</span>, <span class="va">confusion_matrix</span>, <span class="va">mapped_area_ha</span><span class="op">)</span> <span class="op">{</span></span>
@@ -424,9 +431,9 @@ UA_t = 0.524417 \times \frac{HW_{90\%}}{1.645006}
 </details>
 </div>
 </section><section id="temporal-aggregation" class="level3"><h3 class="anchored" data-anchor-id="temporal-aggregation">Temporal Aggregation</h3>
-<section id="single-year-vs.-multi-year-simulation-design" class="level4"><h4 class="anchored" data-anchor-id="single-year-vs.-multi-year-simulation-design">Single-Year vs.&nbsp;Multi-Year Simulation Design</h4>
-<p>ART-TREES permits two approaches to temporal scope in Monte Carlo simulations. Recent validation work demonstrates that single-year simulation design substantially reduces uncertainty compared to multi-year aggregation approaches.</p>
-</section><section id="multi-year-aggregation" class="level4"><h4 class="anchored" data-anchor-id="multi-year-aggregation">Multi-Year Aggregation:</h4>
+<section id="design-comparison" class="level4"><h4 class="anchored" data-anchor-id="design-comparison">Design Comparison</h4>
+<p>ART-TREES permits two temporal scopes for the simulation, a single monitoring year or the whole crediting period aggregated, and recent validation work in a jurisdictional program found that the single-year design gives substantially lower uncertainty than multi-year aggregation.</p>
+</section><section id="multi-year-aggregation" class="level4"><h4 class="anchored" data-anchor-id="multi-year-aggregation">Multi-Year Aggregation</h4>
 <div class="cell">
 <details class="code-fold"><summary>View Code</summary><div class="sourceCode" id="cb5"><pre class="downlit sourceCode r code-with-copy"><code class="sourceCode R"><span><span class="co"># Multi-year approach: Propagates uncertainty forward through years</span></span>
 <span><span class="va">multi_year_simulation</span> <span class="op">&lt;-</span> <span class="kw">function</span><span class="op">(</span><span class="va">n_sim</span> <span class="op">=</span> <span class="fl">10000</span>, <span class="va">years_data</span><span class="op">)</span> <span class="op">{</span></span>
@@ -451,9 +458,9 @@ UA_t = 0.524417 \times \frac{HW_{90\%}}{1.645006}
 <span><span class="op">}</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </details>
 </div>
-<p>Note some important limitations to this. Error propagation across years inflates confidence interval width, which depending data dimensions, can produce UA &gt; 100% uncertainty as it exceeds mean emissions earlier in the trend.</p>
-</section><section id="single-year-design" class="level4"><h4 class="anchored" data-anchor-id="single-year-design">Single-Year Design:</h4>
-<p>On the other hand, the single-year approach constrains simulation to single monitoring period:</p>
+<p>This design has a serious limitation, in that errors accumulate across years and widen the confidence interval, so that the half-width can exceed mean emissions in the early years of the trend and give a UA above 100 per cent.</p>
+</section><section id="single-year-design" class="level4"><h4 class="anchored" data-anchor-id="single-year-design">Single-Year Design</h4>
+<p>The single-year design limits the simulation to one monitoring period, so that only that year’s errors enter the interval.</p>
 <div class="cell">
 <details class="code-fold"><summary>View Code</summary><div class="sourceCode" id="cb6"><pre class="downlit sourceCode r code-with-copy"><code class="sourceCode R"><span><span class="co"># Single-year approach: Isolates uncertainty to reporting period  </span></span>
 <span><span class="va">single_year_simulation</span> <span class="op">&lt;-</span> <span class="kw">function</span><span class="op">(</span><span class="va">n_sim</span> <span class="op">=</span> <span class="fl">10000</span>, <span class="va">year_data</span><span class="op">)</span> <span class="op">{</span></span>
@@ -500,9 +507,9 @@ UA_t = 0.524417 \times \frac{HW_{90\%}}{1.645006}
 <span><span class="co">## Uncertainty Adjustment Factor: 11.2%</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </details>
 </div>
-<p>Validated performance: Jurisdictional program testing achieved 21-percentage-point reduction (from 104% to 83% UAF) by switching from multi-year to single-year design.</p>
+<p>In jurisdictional program testing, switching from the multi-year to the single-year design cut the UAF by 21 percentage points, from 104 per cent to 83 per cent.</p>
 </section><section id="reference-level-treatment" class="level4"><h4 class="anchored" data-anchor-id="reference-level-treatment">Reference Level Treatment</h4>
-<p>Treat the HFLDCL baseline as deterministic or fixed verified value rather than stochastic and persistently in effect:</p>
+<p>The HFLDCL baseline is treated as a fixed, verified value rather than a simulated one, and it stays in effect for the crediting period.</p>
 <div class="cell">
 <details class="code-fold"><summary>View Code</summary><div class="sourceCode" id="cb7"><pre class="downlit sourceCode r code-with-copy"><code class="sourceCode R"><span><span class="co"># CORRECT: Deterministic baseline (Guyana-validated approach)</span></span>
 <span><span class="va">hfldcl_fixed</span> <span class="op">&lt;-</span> <span class="fl">21037534</span>  <span class="co"># Arithmetic mean of verified 2016-2020 period (tCO2)</span></span>
@@ -524,16 +531,16 @@ UA_t = 0.524417 \times \frac{HW_{90\%}}{1.645006}
 <span><span class="co">## Deterministic Baseline UAF: 0.4%</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </details>
 </div>
-<p>One can assume the historical mean or a reference level that has been VVB-verified. By ART’s definition, audit statements are irreversible and issues are non-fungible, which therefore adds removes compliance concerns value and helps avoid artificially inflating UAF with repeat revisions.</p>
+<p>Either the historical mean or a reference level verified by the validation and verification body (VVB) may serve as the fixed value. Under ART’s definitions an audit statement is irreversible and an issuance is not fungible, so a verified reference level removes a compliance concern and avoids inflating the UAF through repeated revision.</p>
 </section><section id="credit-recovery-provision" class="level4"><h4 class="anchored" data-anchor-id="credit-recovery-provision">Credit Recovery Provision</h4>
-<p>Recalculate every 5 years to recover over-deducted credits:</p>
+<p>Every 5 years the deduction is recalculated so that credits withheld in excess can be recovered.</p>
 <p><span class="math display">\[
 \text{Recovered Credits}_t = \sum_{i=1}^{5} (UA_{i,annual} - UA_{cumulative}) \times \text{Emissions}_i
 \]</span></p>
-<p>This incentivizes continuous methodological improvement.</p>
-</section></section></section><section id="worked-example-jurisdictional-program" class="level2"><h2 class="anchored" data-anchor-id="worked-example-jurisdictional-program">4.4 Worked Example: Jurisdictional Program</h2>
+<p>The provision rewards continued improvement in method, because each reduction in annual uncertainty returns credits already deducted.</p>
+</section></section></section><section id="worked-example" class="level2"><h2 class="anchored" data-anchor-id="worked-example">4.4 Worked Example</h2>
 <section id="multi-source-integration" class="level3"><h3 class="anchored" data-anchor-id="multi-source-integration">Multi-Source Integration</h3>
-<p>Combine uncertainties from all three chapters into crediting period simulation:</p>
+<p>The worked example below is a jurisdictional program simulation that combines the uncertainties from all three earlier chapters into one crediting period.</p>
 <div class="cell">
 <details class="code-fold"><summary>View Code</summary><div class="sourceCode" id="cb8"><pre class="downlit sourceCode r code-with-copy"><code class="sourceCode R"><span><span class="co"># Complete jurisdictional simulation</span></span>
 <span><span class="va">jurisdictional_simulation</span> <span class="op">&lt;-</span> <span class="kw">function</span><span class="op">(</span><span class="va">n_sim</span> <span class="op">=</span> <span class="fl">10000</span><span class="op">)</span> <span class="op">{</span></span>
@@ -592,14 +599,14 @@ UA_t = 0.524417 \times \frac{HW_{90\%}}{1.645006}
 </div>
 </section></section><section id="compliance-checklist" class="level2"><h2 class="anchored" data-anchor-id="compliance-checklist">4.5 Compliance Checklist</h2>
 <ul>
-<li>Minimum 10,000 iterations per crediting year</li>
-<li>90% confidence intervals (5th and 95th percentiles)</li>
+<li>At least 10,000 iterations per crediting year</li>
+<li>90 per cent confidence intervals from the 5th and 95th percentiles</li>
 <li>Bootstrap sampling for unknown distributions</li>
-<li>Conservative bias (systematic underestimation permitted)</li>
-<li>Whole-chain integration (activity data + emission factors)</li>
+<li>Conservative bias, with systematic underestimation permitted</li>
+<li>Whole-chain integration of activity data and emission factors</li>
 <li>Documentation of simulation code and random seed</li>
 </ul></section><section id="chapter-summary" class="level2"><h2 class="anchored" data-anchor-id="chapter-summary">4.6 Chapter Summary</h2>
-<p>Monte Carlo simulation aggregates component uncertainties into conservativeness deductions determining credit issuance. Strategic optimization prioritizes dominant sources, such as emission factors in Tier 1 programs or activity data in high-resolution systems. Single-year simulation, deterministic reference levels, and systematic improvements achieve attractive uncertainty reductions, directly increasing revenue and while meeting ART-TREES Section 8 requirements.</p>
+<p>Monte Carlo simulation combines the component uncertainties into the conservativeness deduction that sets credit issuance, and effort is best spent on the dominant source, which is the emission factor in a Tier 1 program and the activity data in a system built on high-resolution imagery. Single-year simulation, a fixed reference level and steady improvement of each input lower the deduction, raise revenue and meet the ART-TREES Section 8 requirements.</p>
 
 
 <!-- -->
@@ -1064,8 +1071,8 @@ ART. (2021). <em>The REDD+ environmental excellence standard</em> (2.0 ed.). <a 
       </a>          
   </div>
   <div class="nav-page nav-page-next">
-      <a href="../references/index.html" class="pagination-link" aria-label="References">
-        <span class="nav-page-text"><span class="chapter-title">References</span></span> <i class="bi bi-arrow-right-short"></i>
+      <a href="../AA-Appendix/primers.html" class="pagination-link" aria-label="Uncertainty Primers">
+        <span class="nav-page-text"><span class="chapter-title">Uncertainty Primers</span></span> <i class="bi bi-arrow-right-short"></i>
       </a>
   </div>
 </nav><div class="modal fade" id="quarto-embedded-source-code-modal" tabindex="-1" aria-labelledby="quarto-embedded-source-code-modal-label" aria-hidden="true"><div class="modal-dialog modal-dialog-scrollable"><div class="modal-content"><div class="modal-header"><h5 class="modal-title" id="quarto-embedded-source-code-modal-label">Source Code</h5><button class="btn-close" data-bs-dismiss="modal"></button></div><div class="modal-body"><div class="">
@@ -1096,15 +1103,15 @@ ART. (2021). <em>The REDD+ environmental excellence standard</em> (2.0 ed.). <a 
 <span id="cb9-25"><a href="#cb9-25" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb9-26"><a href="#cb9-26" aria-hidden="true" tabindex="-1"></a><span class="fu">## Overview {.unnumbered}</span></span>
 <span id="cb9-27"><a href="#cb9-27" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb9-28"><a href="#cb9-28" aria-hidden="true" tabindex="-1"></a>Monte Carlo simulation aggregates uncertainties from activity data (Chapter 3), emission factors (Chapter 2), and allometric equations (Chapter 1) into a single conservativeness deduction for ART-TREES credit issuance. This chapter demonstrates compliant simulation design, presents worked examples achieving 20-50% uncertainty reductions through strategic optimization, and provides decision frameworks for maximizing credit revenue under Section 8 requirements.</span>
+<span id="cb9-28"><a href="#cb9-28" aria-hidden="true" tabindex="-1"></a>Monte Carlo simulation combines the uncertainties in activity data (Chapter 3), emission factors (Chapter 2) and allometric equations (Chapter 1) into a single conservativeness deduction, the share of emission reductions withheld from credit issuance under ART-TREES. This chapter sets out a simulation design that meets the standard, presents worked examples in which uncertainty fell by 20 to 50 per cent through targeted improvement, and gives the reasoning for choosing where to invest under the Section 8 requirements.</span>
 <span id="cb9-29"><a href="#cb9-29" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb9-30"><a href="#cb9-30" aria-hidden="true" tabindex="-1"></a>ART-TREES Section 8 mandates Monte Carlo Approach 2 with minimum 10,000 iterations, 90% confidence intervals, and bootstrap sampling for unknown probability distributions <span class="co">[</span><span class="ot">@artREDDEnvironmentalExcellence2021</span><span class="co">]</span>. The simulation calculates the Uncertainty Adjustment Factor (UAF) from the half-width of emission distribution confidence intervals:</span>
+<span id="cb9-30"><a href="#cb9-30" aria-hidden="true" tabindex="-1"></a>ART-TREES Section 8 requires Monte Carlo Approach 2 with at least 10,000 iterations, 90 per cent confidence intervals, and bootstrap sampling where the probability distribution of an input is unknown <span class="co">[</span><span class="ot">@artREDDEnvironmentalExcellence2021</span><span class="co">]</span>. The simulation calculates the uncertainty adjustment factor (UAF) from the half-width of the confidence interval around simulated emissions.</span>
 <span id="cb9-31"><a href="#cb9-31" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb9-32"><a href="#cb9-32" aria-hidden="true" tabindex="-1"></a>$$</span>
 <span id="cb9-33"><a href="#cb9-33" aria-hidden="true" tabindex="-1"></a>UA_t = 0.524417 \times \frac{HW_{90\%}}{1.645006}</span>
 <span id="cb9-34"><a href="#cb9-34" aria-hidden="true" tabindex="-1"></a>$$</span>
 <span id="cb9-35"><a href="#cb9-35" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb9-36"><a href="#cb9-36" aria-hidden="true" tabindex="-1"></a>Where $HW_{90\%}$ represents the half-width of the 90% confidence interval around mean emissions. This UAF then determines the conservativeness deduction applied to creditable emissions.</span>
+<span id="cb9-36"><a href="#cb9-36" aria-hidden="true" tabindex="-1"></a>Here $HW_{90\%}$ is the half-width of the 90 per cent confidence interval around mean emissions, and the resulting UAF sets the conservativeness deduction applied to creditable emissions.</span>
 <span id="cb9-37"><a href="#cb9-37" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb9-38"><a href="#cb9-38" aria-hidden="true" tabindex="-1"></a><span class="fu">### Environment Setup {.unnumbered}</span></span>
 <span id="cb9-39"><a href="#cb9-39" aria-hidden="true" tabindex="-1"></a></span>
@@ -1167,9 +1174,9 @@ ART. (2021). <em>The REDD+ environmental excellence standard</em> (2.0 ed.). <a 
 <span id="cb9-100"><a href="#cb9-100" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb9-101"><a href="#cb9-101" aria-hidden="true" tabindex="-1"></a><span class="fu">## 4.1 Simulation Design</span></span>
 <span id="cb9-102"><a href="#cb9-102" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb9-103"><a href="#cb9-103" aria-hidden="true" tabindex="-1"></a>Temporal Dimensions</span>
+<span id="cb9-103"><a href="#cb9-103" aria-hidden="true" tabindex="-1"></a><span class="fu">### Temporal Dimensions</span></span>
 <span id="cb9-104"><a href="#cb9-104" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb9-105"><a href="#cb9-105" aria-hidden="true" tabindex="-1"></a>ART-TREES permits single-year or multi-year aggregation. Program participants may recognize that single-year simulations tend to reduce uncertainty by avoiding temporal error propagation. We discuss below some of the advantages and disadvantages in applying similar adjustments and aggregations to Monte Carlo simulated estimates.</span>
+<span id="cb9-105"><a href="#cb9-105" aria-hidden="true" tabindex="-1"></a>ART-TREES permits simulation over a single year or aggregation over several years, and single-year simulation tends to give lower uncertainty because errors do not accumulate across years. The advantages and disadvantages of each design are set out in section 4.3, and the single-year function below is the recommended form.</span>
 <span id="cb9-106"><a href="#cb9-106" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb9-109"><a href="#cb9-109" aria-hidden="true" tabindex="-1"></a><span class="in">```{r}</span></span>
 <span id="cb9-110"><a href="#cb9-110" aria-hidden="true" tabindex="-1"></a><span class="co">#| eval: true</span></span>
@@ -1219,267 +1226,269 @@ ART. (2021). <em>The REDD+ environmental excellence standard</em> (2.0 ed.). <a 
 <span id="cb9-154"><a href="#cb9-154" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb9-155"><a href="#cb9-155" aria-hidden="true" tabindex="-1"></a><span class="fu">### Baseline Treatment</span></span>
 <span id="cb9-156"><a href="#cb9-156" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb9-157"><a href="#cb9-157" aria-hidden="true" tabindex="-1"></a>Use the arithmetic mean of verified historical emissions as deterministic baseline, avoiding stochastic variance. For example, country X computed their HFLDCL as 21,037,534 tCO₂ rather than simulating historical variability <span class="co">[</span><span class="ot">@artREDDEnvironmentalExcellence2021, Section 8.4</span><span class="co">]</span>.</span>
+<span id="cb9-157"><a href="#cb9-157" aria-hidden="true" tabindex="-1"></a>The baseline is the arithmetic mean of verified historical emissions, treated as a fixed value rather than a simulated one, so that it adds no variance of its own. Country X, for example, set its high forest low deforestation crediting level (HFLDCL) at 21,037,534 tCO₂ rather than simulating the variation between historical years <span class="co">[</span><span class="ot">@artREDDEnvironmentalExcellence2021, Section 8.4</span><span class="co">]</span>.</span>
 <span id="cb9-158"><a href="#cb9-158" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb9-159"><a href="#cb9-159" aria-hidden="true" tabindex="-1"></a><span class="fu">## 4.2 Uncertainty Source Prioritization</span></span>
+<span id="cb9-159"><a href="#cb9-159" aria-hidden="true" tabindex="-1"></a><span class="fu">## 4.2 Ranking Uncertainty Sources</span></span>
 <span id="cb9-160"><a href="#cb9-160" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb9-161"><a href="#cb9-161" aria-hidden="true" tabindex="-1"></a><span class="fu">### Sensitivity Analysis</span></span>
 <span id="cb9-162"><a href="#cb9-162" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb9-165"><a href="#cb9-165" aria-hidden="true" tabindex="-1"></a><span class="in">```{r}</span></span>
-<span id="cb9-166"><a href="#cb9-166" aria-hidden="true" tabindex="-1"></a><span class="co">#| eval: true</span></span>
-<span id="cb9-167"><a href="#cb9-167" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb9-168"><a href="#cb9-168" aria-hidden="true" tabindex="-1"></a><span class="co"># Sensitivity analysis across uncertainty sources</span></span>
-<span id="cb9-169"><a href="#cb9-169" aria-hidden="true" tabindex="-1"></a>sensitivity_analysis <span class="ot">&lt;-</span> <span class="cf">function</span>(base_scenario, <span class="at">n_sim =</span> <span class="dv">10000</span>) {</span>
-<span id="cb9-170"><a href="#cb9-170" aria-hidden="true" tabindex="-1"></a>  </span>
-<span id="cb9-171"><a href="#cb9-171" aria-hidden="true" tabindex="-1"></a>  scenarios <span class="ot">&lt;-</span> <span class="fu">list</span>(</span>
-<span id="cb9-172"><a href="#cb9-172" aria-hidden="true" tabindex="-1"></a>    <span class="at">baseline =</span> base_scenario,</span>
-<span id="cb9-173"><a href="#cb9-173" aria-hidden="true" tabindex="-1"></a>    <span class="at">low_ad =</span> <span class="fu">modifyList</span>(base_scenario, <span class="fu">list</span>(<span class="at">ad_uncertainty_pct =</span> base_scenario<span class="sc">$</span>ad_uncertainty_pct <span class="sc">*</span> <span class="fl">0.5</span>)),</span>
-<span id="cb9-174"><a href="#cb9-174" aria-hidden="true" tabindex="-1"></a>    <span class="at">low_ef =</span> <span class="fu">modifyList</span>(base_scenario, <span class="fu">list</span>(<span class="at">ef_uncertainty_pct =</span> base_scenario<span class="sc">$</span>ef_uncertainty_pct <span class="sc">*</span> <span class="fl">0.5</span>)),</span>
-<span id="cb9-175"><a href="#cb9-175" aria-hidden="true" tabindex="-1"></a>    <span class="at">low_both =</span> <span class="fu">modifyList</span>(base_scenario, <span class="fu">list</span>(</span>
-<span id="cb9-176"><a href="#cb9-176" aria-hidden="true" tabindex="-1"></a>      <span class="at">ad_uncertainty_pct =</span> base_scenario<span class="sc">$</span>ad_uncertainty_pct <span class="sc">*</span> <span class="fl">0.5</span>,</span>
-<span id="cb9-177"><a href="#cb9-177" aria-hidden="true" tabindex="-1"></a>      <span class="at">ef_uncertainty_pct =</span> base_scenario<span class="sc">$</span>ef_uncertainty_pct <span class="sc">*</span> <span class="fl">0.5</span>))</span>
-<span id="cb9-178"><a href="#cb9-178" aria-hidden="true" tabindex="-1"></a>  )</span>
-<span id="cb9-179"><a href="#cb9-179" aria-hidden="true" tabindex="-1"></a>  </span>
-<span id="cb9-180"><a href="#cb9-180" aria-hidden="true" tabindex="-1"></a>  results <span class="ot">&lt;-</span> <span class="fu">lapply</span>(scenarios, <span class="cf">function</span>(s) {</span>
-<span id="cb9-181"><a href="#cb9-181" aria-hidden="true" tabindex="-1"></a>    sim <span class="ot">&lt;-</span> <span class="fu">simulate_single_year</span>(n_sim, s)</span>
-<span id="cb9-182"><a href="#cb9-182" aria-hidden="true" tabindex="-1"></a>    <span class="fu">data.frame</span>(</span>
-<span id="cb9-183"><a href="#cb9-183" aria-hidden="true" tabindex="-1"></a>      <span class="at">scenario =</span> <span class="fu">deparse</span>(<span class="fu">substitute</span>(s)),</span>
-<span id="cb9-184"><a href="#cb9-184" aria-hidden="true" tabindex="-1"></a>      <span class="at">uaf =</span> sim<span class="sc">$</span>uaf,</span>
-<span id="cb9-185"><a href="#cb9-185" aria-hidden="true" tabindex="-1"></a>      <span class="at">hw_90_pct =</span> sim<span class="sc">$</span>hw_90_pct</span>
-<span id="cb9-186"><a href="#cb9-186" aria-hidden="true" tabindex="-1"></a>    )</span>
-<span id="cb9-187"><a href="#cb9-187" aria-hidden="true" tabindex="-1"></a>  })</span>
-<span id="cb9-188"><a href="#cb9-188" aria-hidden="true" tabindex="-1"></a>  </span>
-<span id="cb9-189"><a href="#cb9-189" aria-hidden="true" tabindex="-1"></a>  <span class="fu">do.call</span>(rbind, results)</span>
-<span id="cb9-190"><a href="#cb9-190" aria-hidden="true" tabindex="-1"></a>}</span>
-<span id="cb9-191"><a href="#cb9-191" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb9-192"><a href="#cb9-192" aria-hidden="true" tabindex="-1"></a><span class="co"># Run sensitivity</span></span>
-<span id="cb9-193"><a href="#cb9-193" aria-hidden="true" tabindex="-1"></a>sensitivity_results <span class="ot">&lt;-</span> <span class="fu">sensitivity_analysis</span>(year_2024)</span>
-<span id="cb9-194"><a href="#cb9-194" aria-hidden="true" tabindex="-1"></a><span class="fu">print</span>(sensitivity_results)</span>
-<span id="cb9-195"><a href="#cb9-195" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
-<span id="cb9-196"><a href="#cb9-196" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb9-197"><a href="#cb9-197" aria-hidden="true" tabindex="-1"></a>For jurisdictions where emission factor uncertainty dominates (typical in Tier 1 approaches), investments in plot-based Tier 2 emission factors yield greater UAF reductions than marginal improvements in classification accuracy.</span>
+<span id="cb9-163"><a href="#cb9-163" aria-hidden="true" tabindex="-1"></a>The sensitivity analysis below halves the activity data uncertainty, the emission factor uncertainty, and both together, and reports the UAF under each scenario so that the dominant source can be identified.</span>
+<span id="cb9-164"><a href="#cb9-164" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-167"><a href="#cb9-167" aria-hidden="true" tabindex="-1"></a><span class="in">```{r}</span></span>
+<span id="cb9-168"><a href="#cb9-168" aria-hidden="true" tabindex="-1"></a><span class="co">#| eval: true</span></span>
+<span id="cb9-169"><a href="#cb9-169" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-170"><a href="#cb9-170" aria-hidden="true" tabindex="-1"></a><span class="co"># Sensitivity analysis across uncertainty sources</span></span>
+<span id="cb9-171"><a href="#cb9-171" aria-hidden="true" tabindex="-1"></a>sensitivity_analysis <span class="ot">&lt;-</span> <span class="cf">function</span>(base_scenario, <span class="at">n_sim =</span> <span class="dv">10000</span>) {</span>
+<span id="cb9-172"><a href="#cb9-172" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb9-173"><a href="#cb9-173" aria-hidden="true" tabindex="-1"></a>  scenarios <span class="ot">&lt;-</span> <span class="fu">list</span>(</span>
+<span id="cb9-174"><a href="#cb9-174" aria-hidden="true" tabindex="-1"></a>    <span class="at">baseline =</span> base_scenario,</span>
+<span id="cb9-175"><a href="#cb9-175" aria-hidden="true" tabindex="-1"></a>    <span class="at">low_ad =</span> <span class="fu">modifyList</span>(base_scenario, <span class="fu">list</span>(<span class="at">ad_uncertainty_pct =</span> base_scenario<span class="sc">$</span>ad_uncertainty_pct <span class="sc">*</span> <span class="fl">0.5</span>)),</span>
+<span id="cb9-176"><a href="#cb9-176" aria-hidden="true" tabindex="-1"></a>    <span class="at">low_ef =</span> <span class="fu">modifyList</span>(base_scenario, <span class="fu">list</span>(<span class="at">ef_uncertainty_pct =</span> base_scenario<span class="sc">$</span>ef_uncertainty_pct <span class="sc">*</span> <span class="fl">0.5</span>)),</span>
+<span id="cb9-177"><a href="#cb9-177" aria-hidden="true" tabindex="-1"></a>    <span class="at">low_both =</span> <span class="fu">modifyList</span>(base_scenario, <span class="fu">list</span>(</span>
+<span id="cb9-178"><a href="#cb9-178" aria-hidden="true" tabindex="-1"></a>      <span class="at">ad_uncertainty_pct =</span> base_scenario<span class="sc">$</span>ad_uncertainty_pct <span class="sc">*</span> <span class="fl">0.5</span>,</span>
+<span id="cb9-179"><a href="#cb9-179" aria-hidden="true" tabindex="-1"></a>      <span class="at">ef_uncertainty_pct =</span> base_scenario<span class="sc">$</span>ef_uncertainty_pct <span class="sc">*</span> <span class="fl">0.5</span>))</span>
+<span id="cb9-180"><a href="#cb9-180" aria-hidden="true" tabindex="-1"></a>  )</span>
+<span id="cb9-181"><a href="#cb9-181" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb9-182"><a href="#cb9-182" aria-hidden="true" tabindex="-1"></a>  results <span class="ot">&lt;-</span> <span class="fu">lapply</span>(scenarios, <span class="cf">function</span>(s) {</span>
+<span id="cb9-183"><a href="#cb9-183" aria-hidden="true" tabindex="-1"></a>    sim <span class="ot">&lt;-</span> <span class="fu">simulate_single_year</span>(n_sim, s)</span>
+<span id="cb9-184"><a href="#cb9-184" aria-hidden="true" tabindex="-1"></a>    <span class="fu">data.frame</span>(</span>
+<span id="cb9-185"><a href="#cb9-185" aria-hidden="true" tabindex="-1"></a>      <span class="at">scenario =</span> <span class="fu">deparse</span>(<span class="fu">substitute</span>(s)),</span>
+<span id="cb9-186"><a href="#cb9-186" aria-hidden="true" tabindex="-1"></a>      <span class="at">uaf =</span> sim<span class="sc">$</span>uaf,</span>
+<span id="cb9-187"><a href="#cb9-187" aria-hidden="true" tabindex="-1"></a>      <span class="at">hw_90_pct =</span> sim<span class="sc">$</span>hw_90_pct</span>
+<span id="cb9-188"><a href="#cb9-188" aria-hidden="true" tabindex="-1"></a>    )</span>
+<span id="cb9-189"><a href="#cb9-189" aria-hidden="true" tabindex="-1"></a>  })</span>
+<span id="cb9-190"><a href="#cb9-190" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb9-191"><a href="#cb9-191" aria-hidden="true" tabindex="-1"></a>  <span class="fu">do.call</span>(rbind, results)</span>
+<span id="cb9-192"><a href="#cb9-192" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb9-193"><a href="#cb9-193" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-194"><a href="#cb9-194" aria-hidden="true" tabindex="-1"></a><span class="co"># Run sensitivity</span></span>
+<span id="cb9-195"><a href="#cb9-195" aria-hidden="true" tabindex="-1"></a>sensitivity_results <span class="ot">&lt;-</span> <span class="fu">sensitivity_analysis</span>(year_2024)</span>
+<span id="cb9-196"><a href="#cb9-196" aria-hidden="true" tabindex="-1"></a><span class="fu">print</span>(sensitivity_results)</span>
+<span id="cb9-197"><a href="#cb9-197" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
 <span id="cb9-198"><a href="#cb9-198" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb9-199"><a href="#cb9-199" aria-hidden="true" tabindex="-1"></a><span class="fu">## 4.3 Optimization Strategies</span></span>
+<span id="cb9-199"><a href="#cb9-199" aria-hidden="true" tabindex="-1"></a>Where emission factor uncertainty dominates, as it usually does under Tier 1 defaults, investment in plot-based Tier 2 emission factors lowers the UAF by more than a small gain in classification accuracy would.</span>
 <span id="cb9-200"><a href="#cb9-200" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb9-201"><a href="#cb9-201" aria-hidden="true" tabindex="-1"></a><span class="fu">### Bootstrap Sampling</span></span>
+<span id="cb9-201"><a href="#cb9-201" aria-hidden="true" tabindex="-1"></a><span class="fu">## 4.3 Reducing Uncertainty</span></span>
 <span id="cb9-202"><a href="#cb9-202" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb9-203"><a href="#cb9-203" aria-hidden="true" tabindex="-1"></a>When probability distributions are unknown, ART-TREES requires bootstrap resampling. Efficient implementation draws samples from empirical error distributions:</span>
+<span id="cb9-203"><a href="#cb9-203" aria-hidden="true" tabindex="-1"></a><span class="fu">### Bootstrap Sampling</span></span>
 <span id="cb9-204"><a href="#cb9-204" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb9-207"><a href="#cb9-207" aria-hidden="true" tabindex="-1"></a><span class="in">```{r}</span></span>
-<span id="cb9-208"><a href="#cb9-208" aria-hidden="true" tabindex="-1"></a><span class="co">#| eval: true</span></span>
-<span id="cb9-209"><a href="#cb9-209" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb9-210"><a href="#cb9-210" aria-hidden="true" tabindex="-1"></a><span class="co"># Bootstrap activity data from confusion matrix</span></span>
-<span id="cb9-211"><a href="#cb9-211" aria-hidden="true" tabindex="-1"></a>bootstrap_activity_data <span class="ot">&lt;-</span> <span class="cf">function</span>(n_sim, confusion_matrix, mapped_area_ha) {</span>
-<span id="cb9-212"><a href="#cb9-212" aria-hidden="true" tabindex="-1"></a>  </span>
-<span id="cb9-213"><a href="#cb9-213" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Extract user's accuracy (precision) for focal class</span></span>
-<span id="cb9-214"><a href="#cb9-214" aria-hidden="true" tabindex="-1"></a>  users_accuracy <span class="ot">&lt;-</span> confusion_matrix[<span class="st">"Forest"</span>, <span class="st">"Forest"</span>] <span class="sc">/</span> </span>
-<span id="cb9-215"><a href="#cb9-215" aria-hidden="true" tabindex="-1"></a>    <span class="fu">sum</span>(confusion_matrix[<span class="st">"Forest"</span>, ])</span>
-<span id="cb9-216"><a href="#cb9-216" aria-hidden="true" tabindex="-1"></a>  </span>
-<span id="cb9-217"><a href="#cb9-217" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Bootstrap from binomial distribution</span></span>
-<span id="cb9-218"><a href="#cb9-218" aria-hidden="true" tabindex="-1"></a>  true_area_ha <span class="ot">&lt;-</span> <span class="fu">rbinom</span>(n_sim, </span>
-<span id="cb9-219"><a href="#cb9-219" aria-hidden="true" tabindex="-1"></a>    <span class="at">size =</span> mapped_area_ha, </span>
-<span id="cb9-220"><a href="#cb9-220" aria-hidden="true" tabindex="-1"></a>    <span class="at">prob =</span> users_accuracy)</span>
-<span id="cb9-221"><a href="#cb9-221" aria-hidden="true" tabindex="-1"></a>  </span>
-<span id="cb9-222"><a href="#cb9-222" aria-hidden="true" tabindex="-1"></a>  <span class="fu">return</span>(true_area_ha)</span>
-<span id="cb9-223"><a href="#cb9-223" aria-hidden="true" tabindex="-1"></a>}</span>
-<span id="cb9-224"><a href="#cb9-224" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
-<span id="cb9-225"><a href="#cb9-225" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb9-226"><a href="#cb9-226" aria-hidden="true" tabindex="-1"></a><span class="fu">### Temporal Aggregation</span></span>
+<span id="cb9-205"><a href="#cb9-205" aria-hidden="true" tabindex="-1"></a>Where the probability distribution of an input is unknown, ART-TREES requires bootstrap resampling, which draws repeated samples from the observed errors instead of from an assumed distribution. The function below draws the true forest area from a binomial distribution set by the user's accuracy of the map.</span>
+<span id="cb9-206"><a href="#cb9-206" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-209"><a href="#cb9-209" aria-hidden="true" tabindex="-1"></a><span class="in">```{r}</span></span>
+<span id="cb9-210"><a href="#cb9-210" aria-hidden="true" tabindex="-1"></a><span class="co">#| eval: true</span></span>
+<span id="cb9-211"><a href="#cb9-211" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-212"><a href="#cb9-212" aria-hidden="true" tabindex="-1"></a><span class="co"># Bootstrap activity data from confusion matrix</span></span>
+<span id="cb9-213"><a href="#cb9-213" aria-hidden="true" tabindex="-1"></a>bootstrap_activity_data <span class="ot">&lt;-</span> <span class="cf">function</span>(n_sim, confusion_matrix, mapped_area_ha) {</span>
+<span id="cb9-214"><a href="#cb9-214" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb9-215"><a href="#cb9-215" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Extract user's accuracy (precision) for focal class</span></span>
+<span id="cb9-216"><a href="#cb9-216" aria-hidden="true" tabindex="-1"></a>  users_accuracy <span class="ot">&lt;-</span> confusion_matrix[<span class="st">"Forest"</span>, <span class="st">"Forest"</span>] <span class="sc">/</span> </span>
+<span id="cb9-217"><a href="#cb9-217" aria-hidden="true" tabindex="-1"></a>    <span class="fu">sum</span>(confusion_matrix[<span class="st">"Forest"</span>, ])</span>
+<span id="cb9-218"><a href="#cb9-218" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb9-219"><a href="#cb9-219" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Bootstrap from binomial distribution</span></span>
+<span id="cb9-220"><a href="#cb9-220" aria-hidden="true" tabindex="-1"></a>  true_area_ha <span class="ot">&lt;-</span> <span class="fu">rbinom</span>(n_sim, </span>
+<span id="cb9-221"><a href="#cb9-221" aria-hidden="true" tabindex="-1"></a>    <span class="at">size =</span> mapped_area_ha, </span>
+<span id="cb9-222"><a href="#cb9-222" aria-hidden="true" tabindex="-1"></a>    <span class="at">prob =</span> users_accuracy)</span>
+<span id="cb9-223"><a href="#cb9-223" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb9-224"><a href="#cb9-224" aria-hidden="true" tabindex="-1"></a>  <span class="fu">return</span>(true_area_ha)</span>
+<span id="cb9-225"><a href="#cb9-225" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb9-226"><a href="#cb9-226" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
 <span id="cb9-227"><a href="#cb9-227" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb9-228"><a href="#cb9-228" aria-hidden="true" tabindex="-1"></a><span class="fu">#### Single-Year vs. Multi-Year Simulation Design</span></span>
+<span id="cb9-228"><a href="#cb9-228" aria-hidden="true" tabindex="-1"></a><span class="fu">### Temporal Aggregation</span></span>
 <span id="cb9-229"><a href="#cb9-229" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb9-230"><a href="#cb9-230" aria-hidden="true" tabindex="-1"></a>ART-TREES permits two approaches to temporal scope in Monte Carlo simulations. Recent validation work demonstrates that single-year simulation design substantially reduces uncertainty compared to multi-year aggregation approaches.</span>
+<span id="cb9-230"><a href="#cb9-230" aria-hidden="true" tabindex="-1"></a><span class="fu">#### Design Comparison</span></span>
 <span id="cb9-231"><a href="#cb9-231" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb9-232"><a href="#cb9-232" aria-hidden="true" tabindex="-1"></a><span class="fu">#### Multi-Year Aggregation:</span></span>
+<span id="cb9-232"><a href="#cb9-232" aria-hidden="true" tabindex="-1"></a>ART-TREES permits two temporal scopes for the simulation, a single monitoring year or the whole crediting period aggregated, and recent validation work in a jurisdictional program found that the single-year design gives substantially lower uncertainty than multi-year aggregation.</span>
 <span id="cb9-233"><a href="#cb9-233" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb9-236"><a href="#cb9-236" aria-hidden="true" tabindex="-1"></a><span class="in">```{r}</span></span>
-<span id="cb9-237"><a href="#cb9-237" aria-hidden="true" tabindex="-1"></a><span class="co">#| eval: false</span></span>
-<span id="cb9-238"><a href="#cb9-238" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb9-239"><a href="#cb9-239" aria-hidden="true" tabindex="-1"></a><span class="co"># Multi-year approach: Propagates uncertainty forward through years</span></span>
-<span id="cb9-240"><a href="#cb9-240" aria-hidden="true" tabindex="-1"></a>multi_year_simulation <span class="ot">&lt;-</span> <span class="cf">function</span>(<span class="at">n_sim =</span> <span class="dv">10000</span>, years_data) {</span>
-<span id="cb9-241"><a href="#cb9-241" aria-hidden="true" tabindex="-1"></a>  cumulative_emissions <span class="ot">&lt;-</span> <span class="fu">numeric</span>(n_sim)</span>
-<span id="cb9-242"><a href="#cb9-242" aria-hidden="true" tabindex="-1"></a>  </span>
-<span id="cb9-243"><a href="#cb9-243" aria-hidden="true" tabindex="-1"></a>  <span class="cf">for</span> (i <span class="cf">in</span> <span class="dv">1</span><span class="sc">:</span>n_sim) {</span>
-<span id="cb9-244"><a href="#cb9-244" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Sample each year, accumulating uncertainties</span></span>
-<span id="cb9-245"><a href="#cb9-245" aria-hidden="true" tabindex="-1"></a>    year_emissions <span class="ot">&lt;-</span> <span class="fu">sapply</span>(years_data, <span class="cf">function</span>(year) {</span>
-<span id="cb9-246"><a href="#cb9-246" aria-hidden="true" tabindex="-1"></a>      defor <span class="ot">&lt;-</span> <span class="fu">rnorm</span>(<span class="dv">1</span>, year<span class="sc">$</span>deforestation_ha, year<span class="sc">$</span>deforestation_ha <span class="sc">*</span> year<span class="sc">$</span>ad_unc <span class="sc">/</span> <span class="dv">100</span>)</span>
-<span id="cb9-247"><a href="#cb9-247" aria-hidden="true" tabindex="-1"></a>      ef <span class="ot">&lt;-</span> <span class="fu">rnorm</span>(<span class="dv">1</span>, year<span class="sc">$</span>ef_tco2_ha, year<span class="sc">$</span>ef_tco2_ha <span class="sc">*</span> year<span class="sc">$</span>ef_unc <span class="sc">/</span> <span class="dv">100</span>)</span>
-<span id="cb9-248"><a href="#cb9-248" aria-hidden="true" tabindex="-1"></a>      defor <span class="sc">*</span> ef</span>
-<span id="cb9-249"><a href="#cb9-249" aria-hidden="true" tabindex="-1"></a>    })</span>
-<span id="cb9-250"><a href="#cb9-250" aria-hidden="true" tabindex="-1"></a>    cumulative_emissions[i] <span class="ot">&lt;-</span> <span class="fu">sum</span>(year_emissions)</span>
-<span id="cb9-251"><a href="#cb9-251" aria-hidden="true" tabindex="-1"></a>  }</span>
-<span id="cb9-252"><a href="#cb9-252" aria-hidden="true" tabindex="-1"></a>  </span>
-<span id="cb9-253"><a href="#cb9-253" aria-hidden="true" tabindex="-1"></a>  <span class="co"># UAF from cumulative distribution</span></span>
-<span id="cb9-254"><a href="#cb9-254" aria-hidden="true" tabindex="-1"></a>  ci_90 <span class="ot">&lt;-</span> <span class="fu">quantile</span>(cumulative_emissions, <span class="at">probs =</span> <span class="fu">c</span>(<span class="fl">0.05</span>, <span class="fl">0.95</span>))</span>
-<span id="cb9-255"><a href="#cb9-255" aria-hidden="true" tabindex="-1"></a>  hw_90 <span class="ot">&lt;-</span> (ci_90[<span class="dv">2</span>] <span class="sc">-</span> ci_90[<span class="dv">1</span>]) <span class="sc">/</span> <span class="dv">2</span></span>
-<span id="cb9-256"><a href="#cb9-256" aria-hidden="true" tabindex="-1"></a>  uaf <span class="ot">&lt;-</span> <span class="fl">0.524417</span> <span class="sc">*</span> (hw_90 <span class="sc">/</span> <span class="fu">mean</span>(cumulative_emissions)) <span class="sc">/</span> <span class="fl">1.645006</span></span>
-<span id="cb9-257"><a href="#cb9-257" aria-hidden="true" tabindex="-1"></a>  </span>
-<span id="cb9-258"><a href="#cb9-258" aria-hidden="true" tabindex="-1"></a>  <span class="fu">return</span>(<span class="fu">list</span>(<span class="at">uaf =</span> uaf, <span class="at">mean_emissions =</span> <span class="fu">mean</span>(cumulative_emissions)))</span>
-<span id="cb9-259"><a href="#cb9-259" aria-hidden="true" tabindex="-1"></a>}</span>
-<span id="cb9-260"><a href="#cb9-260" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
-<span id="cb9-261"><a href="#cb9-261" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb9-262"><a href="#cb9-262" aria-hidden="true" tabindex="-1"></a>Note some important limitations to this. Error propagation across years inflates confidence interval width, which depending data dimensions, can produce UA <span class="sc">\&gt;</span> 100% uncertainty as it exceeds mean emissions earlier in the trend.</span>
+<span id="cb9-234"><a href="#cb9-234" aria-hidden="true" tabindex="-1"></a><span class="fu">#### Multi-Year Aggregation</span></span>
+<span id="cb9-235"><a href="#cb9-235" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-238"><a href="#cb9-238" aria-hidden="true" tabindex="-1"></a><span class="in">```{r}</span></span>
+<span id="cb9-239"><a href="#cb9-239" aria-hidden="true" tabindex="-1"></a><span class="co">#| eval: false</span></span>
+<span id="cb9-240"><a href="#cb9-240" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-241"><a href="#cb9-241" aria-hidden="true" tabindex="-1"></a><span class="co"># Multi-year approach: Propagates uncertainty forward through years</span></span>
+<span id="cb9-242"><a href="#cb9-242" aria-hidden="true" tabindex="-1"></a>multi_year_simulation <span class="ot">&lt;-</span> <span class="cf">function</span>(<span class="at">n_sim =</span> <span class="dv">10000</span>, years_data) {</span>
+<span id="cb9-243"><a href="#cb9-243" aria-hidden="true" tabindex="-1"></a>  cumulative_emissions <span class="ot">&lt;-</span> <span class="fu">numeric</span>(n_sim)</span>
+<span id="cb9-244"><a href="#cb9-244" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb9-245"><a href="#cb9-245" aria-hidden="true" tabindex="-1"></a>  <span class="cf">for</span> (i <span class="cf">in</span> <span class="dv">1</span><span class="sc">:</span>n_sim) {</span>
+<span id="cb9-246"><a href="#cb9-246" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Sample each year, accumulating uncertainties</span></span>
+<span id="cb9-247"><a href="#cb9-247" aria-hidden="true" tabindex="-1"></a>    year_emissions <span class="ot">&lt;-</span> <span class="fu">sapply</span>(years_data, <span class="cf">function</span>(year) {</span>
+<span id="cb9-248"><a href="#cb9-248" aria-hidden="true" tabindex="-1"></a>      defor <span class="ot">&lt;-</span> <span class="fu">rnorm</span>(<span class="dv">1</span>, year<span class="sc">$</span>deforestation_ha, year<span class="sc">$</span>deforestation_ha <span class="sc">*</span> year<span class="sc">$</span>ad_unc <span class="sc">/</span> <span class="dv">100</span>)</span>
+<span id="cb9-249"><a href="#cb9-249" aria-hidden="true" tabindex="-1"></a>      ef <span class="ot">&lt;-</span> <span class="fu">rnorm</span>(<span class="dv">1</span>, year<span class="sc">$</span>ef_tco2_ha, year<span class="sc">$</span>ef_tco2_ha <span class="sc">*</span> year<span class="sc">$</span>ef_unc <span class="sc">/</span> <span class="dv">100</span>)</span>
+<span id="cb9-250"><a href="#cb9-250" aria-hidden="true" tabindex="-1"></a>      defor <span class="sc">*</span> ef</span>
+<span id="cb9-251"><a href="#cb9-251" aria-hidden="true" tabindex="-1"></a>    })</span>
+<span id="cb9-252"><a href="#cb9-252" aria-hidden="true" tabindex="-1"></a>    cumulative_emissions[i] <span class="ot">&lt;-</span> <span class="fu">sum</span>(year_emissions)</span>
+<span id="cb9-253"><a href="#cb9-253" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb9-254"><a href="#cb9-254" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb9-255"><a href="#cb9-255" aria-hidden="true" tabindex="-1"></a>  <span class="co"># UAF from cumulative distribution</span></span>
+<span id="cb9-256"><a href="#cb9-256" aria-hidden="true" tabindex="-1"></a>  ci_90 <span class="ot">&lt;-</span> <span class="fu">quantile</span>(cumulative_emissions, <span class="at">probs =</span> <span class="fu">c</span>(<span class="fl">0.05</span>, <span class="fl">0.95</span>))</span>
+<span id="cb9-257"><a href="#cb9-257" aria-hidden="true" tabindex="-1"></a>  hw_90 <span class="ot">&lt;-</span> (ci_90[<span class="dv">2</span>] <span class="sc">-</span> ci_90[<span class="dv">1</span>]) <span class="sc">/</span> <span class="dv">2</span></span>
+<span id="cb9-258"><a href="#cb9-258" aria-hidden="true" tabindex="-1"></a>  uaf <span class="ot">&lt;-</span> <span class="fl">0.524417</span> <span class="sc">*</span> (hw_90 <span class="sc">/</span> <span class="fu">mean</span>(cumulative_emissions)) <span class="sc">/</span> <span class="fl">1.645006</span></span>
+<span id="cb9-259"><a href="#cb9-259" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb9-260"><a href="#cb9-260" aria-hidden="true" tabindex="-1"></a>  <span class="fu">return</span>(<span class="fu">list</span>(<span class="at">uaf =</span> uaf, <span class="at">mean_emissions =</span> <span class="fu">mean</span>(cumulative_emissions)))</span>
+<span id="cb9-261"><a href="#cb9-261" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb9-262"><a href="#cb9-262" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
 <span id="cb9-263"><a href="#cb9-263" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb9-264"><a href="#cb9-264" aria-hidden="true" tabindex="-1"></a><span class="fu">#### Single-Year Design:</span></span>
+<span id="cb9-264"><a href="#cb9-264" aria-hidden="true" tabindex="-1"></a>This design has a serious limitation, in that errors accumulate across years and widen the confidence interval, so that the half-width can exceed mean emissions in the early years of the trend and give a UA above 100 per cent.</span>
 <span id="cb9-265"><a href="#cb9-265" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb9-266"><a href="#cb9-266" aria-hidden="true" tabindex="-1"></a>On the other hand, the single-year approach constrains simulation to single monitoring period:</span>
+<span id="cb9-266"><a href="#cb9-266" aria-hidden="true" tabindex="-1"></a><span class="fu">#### Single-Year Design</span></span>
 <span id="cb9-267"><a href="#cb9-267" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb9-270"><a href="#cb9-270" aria-hidden="true" tabindex="-1"></a><span class="in">```{r}</span></span>
-<span id="cb9-271"><a href="#cb9-271" aria-hidden="true" tabindex="-1"></a><span class="co">#| eval: true</span></span>
-<span id="cb9-272"><a href="#cb9-272" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb9-273"><a href="#cb9-273" aria-hidden="true" tabindex="-1"></a><span class="co"># Single-year approach: Isolates uncertainty to reporting period  </span></span>
-<span id="cb9-274"><a href="#cb9-274" aria-hidden="true" tabindex="-1"></a>single_year_simulation <span class="ot">&lt;-</span> <span class="cf">function</span>(<span class="at">n_sim =</span> <span class="dv">10000</span>, year_data) {</span>
-<span id="cb9-275"><a href="#cb9-275" aria-hidden="true" tabindex="-1"></a>  </span>
-<span id="cb9-276"><a href="#cb9-276" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Sample activity data</span></span>
-<span id="cb9-277"><a href="#cb9-277" aria-hidden="true" tabindex="-1"></a>  deforestation_ha <span class="ot">&lt;-</span> <span class="fu">rnorm</span>(n_sim, </span>
-<span id="cb9-278"><a href="#cb9-278" aria-hidden="true" tabindex="-1"></a>    <span class="at">mean =</span> year_data<span class="sc">$</span>deforestation_ha,</span>
-<span id="cb9-279"><a href="#cb9-279" aria-hidden="true" tabindex="-1"></a>    <span class="at">sd =</span> year_data<span class="sc">$</span>deforestation_ha <span class="sc">*</span> year_data<span class="sc">$</span>ad_uncertainty_pct <span class="sc">/</span> <span class="dv">100</span>)</span>
-<span id="cb9-280"><a href="#cb9-280" aria-hidden="true" tabindex="-1"></a>  </span>
-<span id="cb9-281"><a href="#cb9-281" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Sample emission factor</span></span>
-<span id="cb9-282"><a href="#cb9-282" aria-hidden="true" tabindex="-1"></a>  ef_tco2_ha <span class="ot">&lt;-</span> <span class="fu">rnorm</span>(n_sim,</span>
-<span id="cb9-283"><a href="#cb9-283" aria-hidden="true" tabindex="-1"></a>    <span class="at">mean =</span> year_data<span class="sc">$</span>ef_tco2_ha,</span>
-<span id="cb9-284"><a href="#cb9-284" aria-hidden="true" tabindex="-1"></a>    <span class="at">sd =</span> year_data<span class="sc">$</span>ef_tco2_ha <span class="sc">*</span> year_data<span class="sc">$</span>ef_uncertainty_pct <span class="sc">/</span> <span class="dv">100</span>)</span>
-<span id="cb9-285"><a href="#cb9-285" aria-hidden="true" tabindex="-1"></a>  </span>
-<span id="cb9-286"><a href="#cb9-286" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Emissions distribution</span></span>
-<span id="cb9-287"><a href="#cb9-287" aria-hidden="true" tabindex="-1"></a>  emissions_tco2 <span class="ot">&lt;-</span> deforestation_ha <span class="sc">*</span> ef_tco2_ha</span>
-<span id="cb9-288"><a href="#cb9-288" aria-hidden="true" tabindex="-1"></a>  </span>
-<span id="cb9-289"><a href="#cb9-289" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Compute 90% CI</span></span>
-<span id="cb9-290"><a href="#cb9-290" aria-hidden="true" tabindex="-1"></a>  ci_90 <span class="ot">&lt;-</span> <span class="fu">quantile</span>(emissions_tco2, <span class="at">probs =</span> <span class="fu">c</span>(<span class="fl">0.05</span>, <span class="fl">0.95</span>))</span>
-<span id="cb9-291"><a href="#cb9-291" aria-hidden="true" tabindex="-1"></a>  hw_90 <span class="ot">&lt;-</span> (ci_90[<span class="dv">2</span>] <span class="sc">-</span> ci_90[<span class="dv">1</span>]) <span class="sc">/</span> <span class="dv">2</span></span>
-<span id="cb9-292"><a href="#cb9-292" aria-hidden="true" tabindex="-1"></a>  uaf <span class="ot">&lt;-</span> <span class="fl">0.524417</span> <span class="sc">*</span> (hw_90 <span class="sc">/</span> <span class="fu">mean</span>(emissions_tco2)) <span class="sc">/</span> <span class="fl">1.645006</span></span>
-<span id="cb9-293"><a href="#cb9-293" aria-hidden="true" tabindex="-1"></a>  </span>
-<span id="cb9-294"><a href="#cb9-294" aria-hidden="true" tabindex="-1"></a>  <span class="fu">return</span>(<span class="fu">list</span>(</span>
-<span id="cb9-295"><a href="#cb9-295" aria-hidden="true" tabindex="-1"></a>    <span class="at">mean_emissions =</span> <span class="fu">mean</span>(emissions_tco2),</span>
-<span id="cb9-296"><a href="#cb9-296" aria-hidden="true" tabindex="-1"></a>    <span class="at">hw_90_pct =</span> (hw_90 <span class="sc">/</span> <span class="fu">mean</span>(emissions_tco2)) <span class="sc">*</span> <span class="dv">100</span>,</span>
-<span id="cb9-297"><a href="#cb9-297" aria-hidden="true" tabindex="-1"></a>    <span class="at">uaf =</span> uaf</span>
-<span id="cb9-298"><a href="#cb9-298" aria-hidden="true" tabindex="-1"></a>  ))</span>
-<span id="cb9-299"><a href="#cb9-299" aria-hidden="true" tabindex="-1"></a>}</span>
-<span id="cb9-300"><a href="#cb9-300" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb9-301"><a href="#cb9-301" aria-hidden="true" tabindex="-1"></a><span class="co"># Example: 2024 monitoring period</span></span>
-<span id="cb9-302"><a href="#cb9-302" aria-hidden="true" tabindex="-1"></a>year_2024 <span class="ot">&lt;-</span> <span class="fu">list</span>(</span>
-<span id="cb9-303"><a href="#cb9-303" aria-hidden="true" tabindex="-1"></a>  <span class="at">deforestation_ha =</span> <span class="dv">5000</span>,</span>
-<span id="cb9-304"><a href="#cb9-304" aria-hidden="true" tabindex="-1"></a>  <span class="at">ad_uncertainty_pct =</span> <span class="dv">12</span>,      <span class="co"># Chapter 3 accuracy assessment</span></span>
-<span id="cb9-305"><a href="#cb9-305" aria-hidden="true" tabindex="-1"></a>  <span class="at">ef_tco2_ha =</span> <span class="dv">200</span>,</span>
-<span id="cb9-306"><a href="#cb9-306" aria-hidden="true" tabindex="-1"></a>  <span class="at">ef_uncertainty_pct =</span> <span class="dv">18</span>       <span class="co"># Chapter 2 IPCC defaults</span></span>
-<span id="cb9-307"><a href="#cb9-307" aria-hidden="true" tabindex="-1"></a>)</span>
-<span id="cb9-308"><a href="#cb9-308" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb9-309"><a href="#cb9-309" aria-hidden="true" tabindex="-1"></a>results <span class="ot">&lt;-</span> <span class="fu">single_year_simulation</span>(<span class="at">year_data =</span> year_2024)</span>
-<span id="cb9-310"><a href="#cb9-310" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span>(<span class="fu">sprintf</span>(<span class="st">"Mean Emissions: %.0f tCO2</span><span class="sc">\n</span><span class="st">"</span>, results<span class="sc">$</span>mean_emissions))</span>
-<span id="cb9-311"><a href="#cb9-311" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span>(<span class="fu">sprintf</span>(<span class="st">"90%% CI Half-Width: %.1f%%</span><span class="sc">\n</span><span class="st">"</span>, results<span class="sc">$</span>hw_90_pct))</span>
-<span id="cb9-312"><a href="#cb9-312" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span>(<span class="fu">sprintf</span>(<span class="st">"Uncertainty Adjustment Factor: %.1f%%</span><span class="sc">\n</span><span class="st">"</span>, results<span class="sc">$</span>uaf <span class="sc">*</span> <span class="dv">100</span>))</span>
-<span id="cb9-313"><a href="#cb9-313" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
-<span id="cb9-314"><a href="#cb9-314" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb9-315"><a href="#cb9-315" aria-hidden="true" tabindex="-1"></a>Validated performance: Jurisdictional program testing achieved 21-percentage-point reduction (from 104% to 83% UAF) by switching from multi-year to single-year design.</span>
+<span id="cb9-268"><a href="#cb9-268" aria-hidden="true" tabindex="-1"></a>The single-year design limits the simulation to one monitoring period, so that only that year's errors enter the interval.</span>
+<span id="cb9-269"><a href="#cb9-269" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-272"><a href="#cb9-272" aria-hidden="true" tabindex="-1"></a><span class="in">```{r}</span></span>
+<span id="cb9-273"><a href="#cb9-273" aria-hidden="true" tabindex="-1"></a><span class="co">#| eval: true</span></span>
+<span id="cb9-274"><a href="#cb9-274" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-275"><a href="#cb9-275" aria-hidden="true" tabindex="-1"></a><span class="co"># Single-year approach: Isolates uncertainty to reporting period  </span></span>
+<span id="cb9-276"><a href="#cb9-276" aria-hidden="true" tabindex="-1"></a>single_year_simulation <span class="ot">&lt;-</span> <span class="cf">function</span>(<span class="at">n_sim =</span> <span class="dv">10000</span>, year_data) {</span>
+<span id="cb9-277"><a href="#cb9-277" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb9-278"><a href="#cb9-278" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Sample activity data</span></span>
+<span id="cb9-279"><a href="#cb9-279" aria-hidden="true" tabindex="-1"></a>  deforestation_ha <span class="ot">&lt;-</span> <span class="fu">rnorm</span>(n_sim, </span>
+<span id="cb9-280"><a href="#cb9-280" aria-hidden="true" tabindex="-1"></a>    <span class="at">mean =</span> year_data<span class="sc">$</span>deforestation_ha,</span>
+<span id="cb9-281"><a href="#cb9-281" aria-hidden="true" tabindex="-1"></a>    <span class="at">sd =</span> year_data<span class="sc">$</span>deforestation_ha <span class="sc">*</span> year_data<span class="sc">$</span>ad_uncertainty_pct <span class="sc">/</span> <span class="dv">100</span>)</span>
+<span id="cb9-282"><a href="#cb9-282" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb9-283"><a href="#cb9-283" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Sample emission factor</span></span>
+<span id="cb9-284"><a href="#cb9-284" aria-hidden="true" tabindex="-1"></a>  ef_tco2_ha <span class="ot">&lt;-</span> <span class="fu">rnorm</span>(n_sim,</span>
+<span id="cb9-285"><a href="#cb9-285" aria-hidden="true" tabindex="-1"></a>    <span class="at">mean =</span> year_data<span class="sc">$</span>ef_tco2_ha,</span>
+<span id="cb9-286"><a href="#cb9-286" aria-hidden="true" tabindex="-1"></a>    <span class="at">sd =</span> year_data<span class="sc">$</span>ef_tco2_ha <span class="sc">*</span> year_data<span class="sc">$</span>ef_uncertainty_pct <span class="sc">/</span> <span class="dv">100</span>)</span>
+<span id="cb9-287"><a href="#cb9-287" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb9-288"><a href="#cb9-288" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Emissions distribution</span></span>
+<span id="cb9-289"><a href="#cb9-289" aria-hidden="true" tabindex="-1"></a>  emissions_tco2 <span class="ot">&lt;-</span> deforestation_ha <span class="sc">*</span> ef_tco2_ha</span>
+<span id="cb9-290"><a href="#cb9-290" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb9-291"><a href="#cb9-291" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Compute 90% CI</span></span>
+<span id="cb9-292"><a href="#cb9-292" aria-hidden="true" tabindex="-1"></a>  ci_90 <span class="ot">&lt;-</span> <span class="fu">quantile</span>(emissions_tco2, <span class="at">probs =</span> <span class="fu">c</span>(<span class="fl">0.05</span>, <span class="fl">0.95</span>))</span>
+<span id="cb9-293"><a href="#cb9-293" aria-hidden="true" tabindex="-1"></a>  hw_90 <span class="ot">&lt;-</span> (ci_90[<span class="dv">2</span>] <span class="sc">-</span> ci_90[<span class="dv">1</span>]) <span class="sc">/</span> <span class="dv">2</span></span>
+<span id="cb9-294"><a href="#cb9-294" aria-hidden="true" tabindex="-1"></a>  uaf <span class="ot">&lt;-</span> <span class="fl">0.524417</span> <span class="sc">*</span> (hw_90 <span class="sc">/</span> <span class="fu">mean</span>(emissions_tco2)) <span class="sc">/</span> <span class="fl">1.645006</span></span>
+<span id="cb9-295"><a href="#cb9-295" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb9-296"><a href="#cb9-296" aria-hidden="true" tabindex="-1"></a>  <span class="fu">return</span>(<span class="fu">list</span>(</span>
+<span id="cb9-297"><a href="#cb9-297" aria-hidden="true" tabindex="-1"></a>    <span class="at">mean_emissions =</span> <span class="fu">mean</span>(emissions_tco2),</span>
+<span id="cb9-298"><a href="#cb9-298" aria-hidden="true" tabindex="-1"></a>    <span class="at">hw_90_pct =</span> (hw_90 <span class="sc">/</span> <span class="fu">mean</span>(emissions_tco2)) <span class="sc">*</span> <span class="dv">100</span>,</span>
+<span id="cb9-299"><a href="#cb9-299" aria-hidden="true" tabindex="-1"></a>    <span class="at">uaf =</span> uaf</span>
+<span id="cb9-300"><a href="#cb9-300" aria-hidden="true" tabindex="-1"></a>  ))</span>
+<span id="cb9-301"><a href="#cb9-301" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb9-302"><a href="#cb9-302" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-303"><a href="#cb9-303" aria-hidden="true" tabindex="-1"></a><span class="co"># Example: 2024 monitoring period</span></span>
+<span id="cb9-304"><a href="#cb9-304" aria-hidden="true" tabindex="-1"></a>year_2024 <span class="ot">&lt;-</span> <span class="fu">list</span>(</span>
+<span id="cb9-305"><a href="#cb9-305" aria-hidden="true" tabindex="-1"></a>  <span class="at">deforestation_ha =</span> <span class="dv">5000</span>,</span>
+<span id="cb9-306"><a href="#cb9-306" aria-hidden="true" tabindex="-1"></a>  <span class="at">ad_uncertainty_pct =</span> <span class="dv">12</span>,      <span class="co"># Chapter 3 accuracy assessment</span></span>
+<span id="cb9-307"><a href="#cb9-307" aria-hidden="true" tabindex="-1"></a>  <span class="at">ef_tco2_ha =</span> <span class="dv">200</span>,</span>
+<span id="cb9-308"><a href="#cb9-308" aria-hidden="true" tabindex="-1"></a>  <span class="at">ef_uncertainty_pct =</span> <span class="dv">18</span>       <span class="co"># Chapter 2 IPCC defaults</span></span>
+<span id="cb9-309"><a href="#cb9-309" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb9-310"><a href="#cb9-310" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-311"><a href="#cb9-311" aria-hidden="true" tabindex="-1"></a>results <span class="ot">&lt;-</span> <span class="fu">single_year_simulation</span>(<span class="at">year_data =</span> year_2024)</span>
+<span id="cb9-312"><a href="#cb9-312" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span>(<span class="fu">sprintf</span>(<span class="st">"Mean Emissions: %.0f tCO2</span><span class="sc">\n</span><span class="st">"</span>, results<span class="sc">$</span>mean_emissions))</span>
+<span id="cb9-313"><a href="#cb9-313" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span>(<span class="fu">sprintf</span>(<span class="st">"90%% CI Half-Width: %.1f%%</span><span class="sc">\n</span><span class="st">"</span>, results<span class="sc">$</span>hw_90_pct))</span>
+<span id="cb9-314"><a href="#cb9-314" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span>(<span class="fu">sprintf</span>(<span class="st">"Uncertainty Adjustment Factor: %.1f%%</span><span class="sc">\n</span><span class="st">"</span>, results<span class="sc">$</span>uaf <span class="sc">*</span> <span class="dv">100</span>))</span>
+<span id="cb9-315"><a href="#cb9-315" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
 <span id="cb9-316"><a href="#cb9-316" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb9-317"><a href="#cb9-317" aria-hidden="true" tabindex="-1"></a><span class="fu">#### Reference Level Treatment</span></span>
+<span id="cb9-317"><a href="#cb9-317" aria-hidden="true" tabindex="-1"></a>In jurisdictional program testing, switching from the multi-year to the single-year design cut the UAF by 21 percentage points, from 104 per cent to 83 per cent.</span>
 <span id="cb9-318"><a href="#cb9-318" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb9-319"><a href="#cb9-319" aria-hidden="true" tabindex="-1"></a>Treat the HFLDCL baseline as deterministic or fixed verified value rather than stochastic and persistently in effect:</span>
+<span id="cb9-319"><a href="#cb9-319" aria-hidden="true" tabindex="-1"></a><span class="fu">#### Reference Level Treatment</span></span>
 <span id="cb9-320"><a href="#cb9-320" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb9-323"><a href="#cb9-323" aria-hidden="true" tabindex="-1"></a><span class="in">```{r}</span></span>
-<span id="cb9-324"><a href="#cb9-324" aria-hidden="true" tabindex="-1"></a><span class="co">#| eval: true</span></span>
-<span id="cb9-325"><a href="#cb9-325" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb9-326"><a href="#cb9-326" aria-hidden="true" tabindex="-1"></a><span class="co"># CORRECT: Deterministic baseline (Guyana-validated approach)</span></span>
-<span id="cb9-327"><a href="#cb9-327" aria-hidden="true" tabindex="-1"></a>hfldcl_fixed <span class="ot">&lt;-</span> <span class="dv">21037534</span>  <span class="co"># Arithmetic mean of verified 2016-2020 period (tCO2)</span></span>
-<span id="cb9-328"><a href="#cb9-328" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb9-329"><a href="#cb9-329" aria-hidden="true" tabindex="-1"></a><span class="co"># Simulate only crediting period emissions</span></span>
-<span id="cb9-330"><a href="#cb9-330" aria-hidden="true" tabindex="-1"></a>n_sim <span class="ot">&lt;-</span> <span class="dv">10000</span></span>
-<span id="cb9-331"><a href="#cb9-331" aria-hidden="true" tabindex="-1"></a>emissions_2024 <span class="ot">&lt;-</span> <span class="fu">rnorm</span>(n_sim, <span class="at">mean =</span> <span class="dv">1000000</span>, <span class="at">sd =</span> <span class="dv">1000000</span> <span class="sc">*</span> <span class="fl">0.15</span>)</span>
-<span id="cb9-332"><a href="#cb9-332" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb9-333"><a href="#cb9-333" aria-hidden="true" tabindex="-1"></a><span class="co"># Reductions with fixed baseline</span></span>
-<span id="cb9-334"><a href="#cb9-334" aria-hidden="true" tabindex="-1"></a>reductions_tco2 <span class="ot">&lt;-</span> <span class="fu">pmax</span>(<span class="dv">0</span>, hfldcl_fixed <span class="sc">-</span> emissions_2024)</span>
-<span id="cb9-335"><a href="#cb9-335" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb9-336"><a href="#cb9-336" aria-hidden="true" tabindex="-1"></a><span class="co"># UAF calculation</span></span>
-<span id="cb9-337"><a href="#cb9-337" aria-hidden="true" tabindex="-1"></a>ci_90 <span class="ot">&lt;-</span> <span class="fu">quantile</span>(reductions_tco2, <span class="at">probs =</span> <span class="fu">c</span>(<span class="fl">0.05</span>, <span class="fl">0.95</span>))</span>
-<span id="cb9-338"><a href="#cb9-338" aria-hidden="true" tabindex="-1"></a>hw_90 <span class="ot">&lt;-</span> (ci_90[<span class="dv">2</span>] <span class="sc">-</span> ci_90[<span class="dv">1</span>]) <span class="sc">/</span> <span class="dv">2</span></span>
-<span id="cb9-339"><a href="#cb9-339" aria-hidden="true" tabindex="-1"></a>uaf <span class="ot">&lt;-</span> <span class="fl">0.524417</span> <span class="sc">*</span> (hw_90 <span class="sc">/</span> <span class="fu">mean</span>(reductions_tco2)) <span class="sc">/</span> <span class="fl">1.645006</span></span>
-<span id="cb9-340"><a href="#cb9-340" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb9-341"><a href="#cb9-341" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span>(<span class="fu">sprintf</span>(<span class="st">"</span><span class="sc">\n</span><span class="st">Deterministic Baseline UAF: %.1f%%</span><span class="sc">\n</span><span class="st">"</span>, uaf <span class="sc">*</span> <span class="dv">100</span>))</span>
-<span id="cb9-342"><a href="#cb9-342" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
-<span id="cb9-343"><a href="#cb9-343" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb9-344"><a href="#cb9-344" aria-hidden="true" tabindex="-1"></a>One can assume the historical mean or a reference level that has been VVB-verified. By ART's definition, audit statements are irreversible and issues are non-fungible, which therefore adds removes compliance concerns value and helps avoid artificially inflating UAF with repeat revisions.</span>
+<span id="cb9-321"><a href="#cb9-321" aria-hidden="true" tabindex="-1"></a>The HFLDCL baseline is treated as a fixed, verified value rather than a simulated one, and it stays in effect for the crediting period.</span>
+<span id="cb9-322"><a href="#cb9-322" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-325"><a href="#cb9-325" aria-hidden="true" tabindex="-1"></a><span class="in">```{r}</span></span>
+<span id="cb9-326"><a href="#cb9-326" aria-hidden="true" tabindex="-1"></a><span class="co">#| eval: true</span></span>
+<span id="cb9-327"><a href="#cb9-327" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-328"><a href="#cb9-328" aria-hidden="true" tabindex="-1"></a><span class="co"># CORRECT: Deterministic baseline (Guyana-validated approach)</span></span>
+<span id="cb9-329"><a href="#cb9-329" aria-hidden="true" tabindex="-1"></a>hfldcl_fixed <span class="ot">&lt;-</span> <span class="dv">21037534</span>  <span class="co"># Arithmetic mean of verified 2016-2020 period (tCO2)</span></span>
+<span id="cb9-330"><a href="#cb9-330" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-331"><a href="#cb9-331" aria-hidden="true" tabindex="-1"></a><span class="co"># Simulate only crediting period emissions</span></span>
+<span id="cb9-332"><a href="#cb9-332" aria-hidden="true" tabindex="-1"></a>n_sim <span class="ot">&lt;-</span> <span class="dv">10000</span></span>
+<span id="cb9-333"><a href="#cb9-333" aria-hidden="true" tabindex="-1"></a>emissions_2024 <span class="ot">&lt;-</span> <span class="fu">rnorm</span>(n_sim, <span class="at">mean =</span> <span class="dv">1000000</span>, <span class="at">sd =</span> <span class="dv">1000000</span> <span class="sc">*</span> <span class="fl">0.15</span>)</span>
+<span id="cb9-334"><a href="#cb9-334" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-335"><a href="#cb9-335" aria-hidden="true" tabindex="-1"></a><span class="co"># Reductions with fixed baseline</span></span>
+<span id="cb9-336"><a href="#cb9-336" aria-hidden="true" tabindex="-1"></a>reductions_tco2 <span class="ot">&lt;-</span> <span class="fu">pmax</span>(<span class="dv">0</span>, hfldcl_fixed <span class="sc">-</span> emissions_2024)</span>
+<span id="cb9-337"><a href="#cb9-337" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-338"><a href="#cb9-338" aria-hidden="true" tabindex="-1"></a><span class="co"># UAF calculation</span></span>
+<span id="cb9-339"><a href="#cb9-339" aria-hidden="true" tabindex="-1"></a>ci_90 <span class="ot">&lt;-</span> <span class="fu">quantile</span>(reductions_tco2, <span class="at">probs =</span> <span class="fu">c</span>(<span class="fl">0.05</span>, <span class="fl">0.95</span>))</span>
+<span id="cb9-340"><a href="#cb9-340" aria-hidden="true" tabindex="-1"></a>hw_90 <span class="ot">&lt;-</span> (ci_90[<span class="dv">2</span>] <span class="sc">-</span> ci_90[<span class="dv">1</span>]) <span class="sc">/</span> <span class="dv">2</span></span>
+<span id="cb9-341"><a href="#cb9-341" aria-hidden="true" tabindex="-1"></a>uaf <span class="ot">&lt;-</span> <span class="fl">0.524417</span> <span class="sc">*</span> (hw_90 <span class="sc">/</span> <span class="fu">mean</span>(reductions_tco2)) <span class="sc">/</span> <span class="fl">1.645006</span></span>
+<span id="cb9-342"><a href="#cb9-342" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-343"><a href="#cb9-343" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span>(<span class="fu">sprintf</span>(<span class="st">"</span><span class="sc">\n</span><span class="st">Deterministic Baseline UAF: %.1f%%</span><span class="sc">\n</span><span class="st">"</span>, uaf <span class="sc">*</span> <span class="dv">100</span>))</span>
+<span id="cb9-344"><a href="#cb9-344" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
 <span id="cb9-345"><a href="#cb9-345" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb9-346"><a href="#cb9-346" aria-hidden="true" tabindex="-1"></a><span class="fu">#### Credit Recovery Provision</span></span>
+<span id="cb9-346"><a href="#cb9-346" aria-hidden="true" tabindex="-1"></a>Either the historical mean or a reference level verified by the validation and verification body (VVB) may serve as the fixed value. Under ART's definitions an audit statement is irreversible and an issuance is not fungible, so a verified reference level removes a compliance concern and avoids inflating the UAF through repeated revision.</span>
 <span id="cb9-347"><a href="#cb9-347" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb9-348"><a href="#cb9-348" aria-hidden="true" tabindex="-1"></a>Recalculate every 5 years to recover over-deducted credits:</span>
+<span id="cb9-348"><a href="#cb9-348" aria-hidden="true" tabindex="-1"></a><span class="fu">#### Credit Recovery Provision</span></span>
 <span id="cb9-349"><a href="#cb9-349" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb9-350"><a href="#cb9-350" aria-hidden="true" tabindex="-1"></a>$$</span>
-<span id="cb9-351"><a href="#cb9-351" aria-hidden="true" tabindex="-1"></a>\text{Recovered Credits}_t = \sum_{i=1}^{5} (UA_{i,annual} - UA_{cumulative}) \times \text{Emissions}_i</span>
+<span id="cb9-350"><a href="#cb9-350" aria-hidden="true" tabindex="-1"></a>Every 5 years the deduction is recalculated so that credits withheld in excess can be recovered.</span>
+<span id="cb9-351"><a href="#cb9-351" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb9-352"><a href="#cb9-352" aria-hidden="true" tabindex="-1"></a>$$</span>
-<span id="cb9-353"><a href="#cb9-353" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb9-354"><a href="#cb9-354" aria-hidden="true" tabindex="-1"></a>This incentivizes continuous methodological improvement.</span>
+<span id="cb9-353"><a href="#cb9-353" aria-hidden="true" tabindex="-1"></a>\text{Recovered Credits}_t = \sum_{i=1}^{5} (UA_{i,annual} - UA_{cumulative}) \times \text{Emissions}_i</span>
+<span id="cb9-354"><a href="#cb9-354" aria-hidden="true" tabindex="-1"></a>$$</span>
 <span id="cb9-355"><a href="#cb9-355" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb9-356"><a href="#cb9-356" aria-hidden="true" tabindex="-1"></a><span class="fu">## 4.4 Worked Example: Jurisdictional Program</span></span>
+<span id="cb9-356"><a href="#cb9-356" aria-hidden="true" tabindex="-1"></a>The provision rewards continued improvement in method, because each reduction in annual uncertainty returns credits already deducted.</span>
 <span id="cb9-357"><a href="#cb9-357" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb9-358"><a href="#cb9-358" aria-hidden="true" tabindex="-1"></a><span class="fu">### Multi-Source Integration</span></span>
+<span id="cb9-358"><a href="#cb9-358" aria-hidden="true" tabindex="-1"></a><span class="fu">## 4.4 Worked Example</span></span>
 <span id="cb9-359"><a href="#cb9-359" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb9-360"><a href="#cb9-360" aria-hidden="true" tabindex="-1"></a>Combine uncertainties from all three chapters into crediting period simulation:</span>
+<span id="cb9-360"><a href="#cb9-360" aria-hidden="true" tabindex="-1"></a><span class="fu">### Multi-Source Integration</span></span>
 <span id="cb9-361"><a href="#cb9-361" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb9-364"><a href="#cb9-364" aria-hidden="true" tabindex="-1"></a><span class="in">```{r}</span></span>
-<span id="cb9-365"><a href="#cb9-365" aria-hidden="true" tabindex="-1"></a><span class="co">#| eval: true</span></span>
-<span id="cb9-366"><a href="#cb9-366" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb9-367"><a href="#cb9-367" aria-hidden="true" tabindex="-1"></a><span class="co"># Complete jurisdictional simulation</span></span>
-<span id="cb9-368"><a href="#cb9-368" aria-hidden="true" tabindex="-1"></a>jurisdictional_simulation <span class="ot">&lt;-</span> <span class="cf">function</span>(<span class="at">n_sim =</span> <span class="dv">10000</span>) {</span>
-<span id="cb9-369"><a href="#cb9-369" aria-hidden="true" tabindex="-1"></a>  </span>
-<span id="cb9-370"><a href="#cb9-370" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Activity Data (Chapter 3: ±12% from accuracy assessment)</span></span>
-<span id="cb9-371"><a href="#cb9-371" aria-hidden="true" tabindex="-1"></a>  deforestation_2024_ha <span class="ot">&lt;-</span> <span class="fu">rnorm</span>(n_sim, <span class="at">mean =</span> <span class="dv">5000</span>, <span class="at">sd =</span> <span class="dv">5000</span> <span class="sc">*</span> <span class="fl">0.12</span>)</span>
-<span id="cb9-372"><a href="#cb9-372" aria-hidden="true" tabindex="-1"></a>  </span>
-<span id="cb9-373"><a href="#cb9-373" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Emission Factors (Chapter 2: Tier 1 ±18%)</span></span>
-<span id="cb9-374"><a href="#cb9-374" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Aboveground biomass removal</span></span>
-<span id="cb9-375"><a href="#cb9-375" aria-hidden="true" tabindex="-1"></a>  agb_loss_tco2_ha <span class="ot">&lt;-</span> <span class="fu">rnorm</span>(n_sim, <span class="at">mean =</span> <span class="dv">180</span>, <span class="at">sd =</span> <span class="dv">180</span> <span class="sc">*</span> <span class="fl">0.18</span>)</span>
-<span id="cb9-376"><a href="#cb9-376" aria-hidden="true" tabindex="-1"></a>  </span>
-<span id="cb9-377"><a href="#cb9-377" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Belowground biomass (Chapter 2: root-shoot ratio ±15%)</span></span>
-<span id="cb9-378"><a href="#cb9-378" aria-hidden="true" tabindex="-1"></a>  bgb_loss_tco2_ha <span class="ot">&lt;-</span> <span class="fu">rnorm</span>(n_sim, <span class="at">mean =</span> <span class="dv">40</span>, <span class="at">sd =</span> <span class="dv">40</span> <span class="sc">*</span> <span class="fl">0.15</span>)</span>
-<span id="cb9-379"><a href="#cb9-379" aria-hidden="true" tabindex="-1"></a>  </span>
-<span id="cb9-380"><a href="#cb9-380" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Total emission factor</span></span>
-<span id="cb9-381"><a href="#cb9-381" aria-hidden="true" tabindex="-1"></a>  total_ef_tco2_ha <span class="ot">&lt;-</span> agb_loss_tco2_ha <span class="sc">+</span> bgb_loss_tco2_ha</span>
-<span id="cb9-382"><a href="#cb9-382" aria-hidden="true" tabindex="-1"></a>  </span>
-<span id="cb9-383"><a href="#cb9-383" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Calculate emissions distribution</span></span>
-<span id="cb9-384"><a href="#cb9-384" aria-hidden="true" tabindex="-1"></a>  emissions_tco2 <span class="ot">&lt;-</span> deforestation_2024_ha <span class="sc">*</span> total_ef_tco2_ha</span>
-<span id="cb9-385"><a href="#cb9-385" aria-hidden="true" tabindex="-1"></a>  </span>
-<span id="cb9-386"><a href="#cb9-386" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Reference level (deterministic)</span></span>
-<span id="cb9-387"><a href="#cb9-387" aria-hidden="true" tabindex="-1"></a>  hfldcl_tco2 <span class="ot">&lt;-</span> <span class="dv">21037534</span>  <span class="co"># Mean of 2016-2020</span></span>
-<span id="cb9-388"><a href="#cb9-388" aria-hidden="true" tabindex="-1"></a>  </span>
-<span id="cb9-389"><a href="#cb9-389" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Emission reductions</span></span>
-<span id="cb9-390"><a href="#cb9-390" aria-hidden="true" tabindex="-1"></a>  reductions_tco2 <span class="ot">&lt;-</span> <span class="fu">pmax</span>(<span class="dv">0</span>, hfldcl_tco2 <span class="sc">-</span> emissions_tco2)</span>
-<span id="cb9-391"><a href="#cb9-391" aria-hidden="true" tabindex="-1"></a>  </span>
-<span id="cb9-392"><a href="#cb9-392" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Uncertainty metrics</span></span>
-<span id="cb9-393"><a href="#cb9-393" aria-hidden="true" tabindex="-1"></a>  ci_90 <span class="ot">&lt;-</span> <span class="fu">quantile</span>(reductions_tco2, <span class="at">probs =</span> <span class="fu">c</span>(<span class="fl">0.05</span>, <span class="fl">0.95</span>))</span>
-<span id="cb9-394"><a href="#cb9-394" aria-hidden="true" tabindex="-1"></a>  hw_90 <span class="ot">&lt;-</span> (ci_90[<span class="dv">2</span>] <span class="sc">-</span> ci_90[<span class="dv">1</span>]) <span class="sc">/</span> <span class="dv">2</span></span>
-<span id="cb9-395"><a href="#cb9-395" aria-hidden="true" tabindex="-1"></a>  uaf <span class="ot">&lt;-</span> <span class="fl">0.524417</span> <span class="sc">*</span> (hw_90 <span class="sc">/</span> <span class="fu">mean</span>(reductions_tco2)) <span class="sc">/</span> <span class="fl">1.645006</span></span>
-<span id="cb9-396"><a href="#cb9-396" aria-hidden="true" tabindex="-1"></a>  </span>
-<span id="cb9-397"><a href="#cb9-397" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Creditable emissions after conservativeness deduction</span></span>
-<span id="cb9-398"><a href="#cb9-398" aria-hidden="true" tabindex="-1"></a>  creditable <span class="ot">&lt;-</span> <span class="fu">mean</span>(reductions_tco2) <span class="sc">*</span> (<span class="dv">1</span> <span class="sc">-</span> uaf)</span>
-<span id="cb9-399"><a href="#cb9-399" aria-hidden="true" tabindex="-1"></a>  </span>
-<span id="cb9-400"><a href="#cb9-400" aria-hidden="true" tabindex="-1"></a>  <span class="fu">return</span>(<span class="fu">list</span>(</span>
-<span id="cb9-401"><a href="#cb9-401" aria-hidden="true" tabindex="-1"></a>    <span class="at">mean_reductions =</span> <span class="fu">mean</span>(reductions_tco2),</span>
-<span id="cb9-402"><a href="#cb9-402" aria-hidden="true" tabindex="-1"></a>    <span class="at">uaf =</span> uaf,</span>
-<span id="cb9-403"><a href="#cb9-403" aria-hidden="true" tabindex="-1"></a>    <span class="at">hw_90_pct =</span> (hw_90 <span class="sc">/</span> <span class="fu">mean</span>(reductions_tco2)) <span class="sc">*</span> <span class="dv">100</span>,</span>
-<span id="cb9-404"><a href="#cb9-404" aria-hidden="true" tabindex="-1"></a>    <span class="at">creditable_tco2 =</span> creditable,</span>
-<span id="cb9-405"><a href="#cb9-405" aria-hidden="true" tabindex="-1"></a>    <span class="at">deduction_pct =</span> uaf <span class="sc">*</span> <span class="dv">100</span></span>
-<span id="cb9-406"><a href="#cb9-406" aria-hidden="true" tabindex="-1"></a>  ))</span>
-<span id="cb9-407"><a href="#cb9-407" aria-hidden="true" tabindex="-1"></a>}</span>
-<span id="cb9-408"><a href="#cb9-408" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb9-409"><a href="#cb9-409" aria-hidden="true" tabindex="-1"></a><span class="co"># Execute simulation</span></span>
-<span id="cb9-410"><a href="#cb9-410" aria-hidden="true" tabindex="-1"></a>program_results <span class="ot">&lt;-</span> <span class="fu">jurisdictional_simulation</span>()</span>
-<span id="cb9-411"><a href="#cb9-411" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb9-412"><a href="#cb9-412" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span>(<span class="fu">sprintf</span>(<span class="st">"Mean Emission Reductions: %.0f tCO2</span><span class="sc">\n</span><span class="st">"</span>, program_results<span class="sc">$</span>mean_reductions))</span>
-<span id="cb9-413"><a href="#cb9-413" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span>(<span class="fu">sprintf</span>(<span class="st">"90%% CI Half-Width: %.1f%%</span><span class="sc">\n</span><span class="st">"</span>, program_results<span class="sc">$</span>hw_90_pct))</span>
-<span id="cb9-414"><a href="#cb9-414" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span>(<span class="fu">sprintf</span>(<span class="st">"Uncertainty Deduction: %.1f%%</span><span class="sc">\n</span><span class="st">"</span>, program_results<span class="sc">$</span>deduction_pct))</span>
-<span id="cb9-415"><a href="#cb9-415" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span>(<span class="fu">sprintf</span>(<span class="st">"Creditable Emissions: %.0f tCO2</span><span class="sc">\n</span><span class="st">"</span>, program_results<span class="sc">$</span>creditable_tco2))</span>
-<span id="cb9-416"><a href="#cb9-416" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
-<span id="cb9-417"><a href="#cb9-417" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb9-418"><a href="#cb9-418" aria-hidden="true" tabindex="-1"></a><span class="fu">## 4.5 Compliance Checklist</span></span>
+<span id="cb9-362"><a href="#cb9-362" aria-hidden="true" tabindex="-1"></a>The worked example below is a jurisdictional program simulation that combines the uncertainties from all three earlier chapters into one crediting period.</span>
+<span id="cb9-363"><a href="#cb9-363" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-366"><a href="#cb9-366" aria-hidden="true" tabindex="-1"></a><span class="in">```{r}</span></span>
+<span id="cb9-367"><a href="#cb9-367" aria-hidden="true" tabindex="-1"></a><span class="co">#| eval: true</span></span>
+<span id="cb9-368"><a href="#cb9-368" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-369"><a href="#cb9-369" aria-hidden="true" tabindex="-1"></a><span class="co"># Complete jurisdictional simulation</span></span>
+<span id="cb9-370"><a href="#cb9-370" aria-hidden="true" tabindex="-1"></a>jurisdictional_simulation <span class="ot">&lt;-</span> <span class="cf">function</span>(<span class="at">n_sim =</span> <span class="dv">10000</span>) {</span>
+<span id="cb9-371"><a href="#cb9-371" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb9-372"><a href="#cb9-372" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Activity Data (Chapter 3: ±12% from accuracy assessment)</span></span>
+<span id="cb9-373"><a href="#cb9-373" aria-hidden="true" tabindex="-1"></a>  deforestation_2024_ha <span class="ot">&lt;-</span> <span class="fu">rnorm</span>(n_sim, <span class="at">mean =</span> <span class="dv">5000</span>, <span class="at">sd =</span> <span class="dv">5000</span> <span class="sc">*</span> <span class="fl">0.12</span>)</span>
+<span id="cb9-374"><a href="#cb9-374" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb9-375"><a href="#cb9-375" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Emission Factors (Chapter 2: Tier 1 ±18%)</span></span>
+<span id="cb9-376"><a href="#cb9-376" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Aboveground biomass removal</span></span>
+<span id="cb9-377"><a href="#cb9-377" aria-hidden="true" tabindex="-1"></a>  agb_loss_tco2_ha <span class="ot">&lt;-</span> <span class="fu">rnorm</span>(n_sim, <span class="at">mean =</span> <span class="dv">180</span>, <span class="at">sd =</span> <span class="dv">180</span> <span class="sc">*</span> <span class="fl">0.18</span>)</span>
+<span id="cb9-378"><a href="#cb9-378" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb9-379"><a href="#cb9-379" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Belowground biomass (Chapter 2: root-shoot ratio ±15%)</span></span>
+<span id="cb9-380"><a href="#cb9-380" aria-hidden="true" tabindex="-1"></a>  bgb_loss_tco2_ha <span class="ot">&lt;-</span> <span class="fu">rnorm</span>(n_sim, <span class="at">mean =</span> <span class="dv">40</span>, <span class="at">sd =</span> <span class="dv">40</span> <span class="sc">*</span> <span class="fl">0.15</span>)</span>
+<span id="cb9-381"><a href="#cb9-381" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb9-382"><a href="#cb9-382" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Total emission factor</span></span>
+<span id="cb9-383"><a href="#cb9-383" aria-hidden="true" tabindex="-1"></a>  total_ef_tco2_ha <span class="ot">&lt;-</span> agb_loss_tco2_ha <span class="sc">+</span> bgb_loss_tco2_ha</span>
+<span id="cb9-384"><a href="#cb9-384" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb9-385"><a href="#cb9-385" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Calculate emissions distribution</span></span>
+<span id="cb9-386"><a href="#cb9-386" aria-hidden="true" tabindex="-1"></a>  emissions_tco2 <span class="ot">&lt;-</span> deforestation_2024_ha <span class="sc">*</span> total_ef_tco2_ha</span>
+<span id="cb9-387"><a href="#cb9-387" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb9-388"><a href="#cb9-388" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Reference level (deterministic)</span></span>
+<span id="cb9-389"><a href="#cb9-389" aria-hidden="true" tabindex="-1"></a>  hfldcl_tco2 <span class="ot">&lt;-</span> <span class="dv">21037534</span>  <span class="co"># Mean of 2016-2020</span></span>
+<span id="cb9-390"><a href="#cb9-390" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb9-391"><a href="#cb9-391" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Emission reductions</span></span>
+<span id="cb9-392"><a href="#cb9-392" aria-hidden="true" tabindex="-1"></a>  reductions_tco2 <span class="ot">&lt;-</span> <span class="fu">pmax</span>(<span class="dv">0</span>, hfldcl_tco2 <span class="sc">-</span> emissions_tco2)</span>
+<span id="cb9-393"><a href="#cb9-393" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb9-394"><a href="#cb9-394" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Uncertainty metrics</span></span>
+<span id="cb9-395"><a href="#cb9-395" aria-hidden="true" tabindex="-1"></a>  ci_90 <span class="ot">&lt;-</span> <span class="fu">quantile</span>(reductions_tco2, <span class="at">probs =</span> <span class="fu">c</span>(<span class="fl">0.05</span>, <span class="fl">0.95</span>))</span>
+<span id="cb9-396"><a href="#cb9-396" aria-hidden="true" tabindex="-1"></a>  hw_90 <span class="ot">&lt;-</span> (ci_90[<span class="dv">2</span>] <span class="sc">-</span> ci_90[<span class="dv">1</span>]) <span class="sc">/</span> <span class="dv">2</span></span>
+<span id="cb9-397"><a href="#cb9-397" aria-hidden="true" tabindex="-1"></a>  uaf <span class="ot">&lt;-</span> <span class="fl">0.524417</span> <span class="sc">*</span> (hw_90 <span class="sc">/</span> <span class="fu">mean</span>(reductions_tco2)) <span class="sc">/</span> <span class="fl">1.645006</span></span>
+<span id="cb9-398"><a href="#cb9-398" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb9-399"><a href="#cb9-399" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Creditable emissions after conservativeness deduction</span></span>
+<span id="cb9-400"><a href="#cb9-400" aria-hidden="true" tabindex="-1"></a>  creditable <span class="ot">&lt;-</span> <span class="fu">mean</span>(reductions_tco2) <span class="sc">*</span> (<span class="dv">1</span> <span class="sc">-</span> uaf)</span>
+<span id="cb9-401"><a href="#cb9-401" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb9-402"><a href="#cb9-402" aria-hidden="true" tabindex="-1"></a>  <span class="fu">return</span>(<span class="fu">list</span>(</span>
+<span id="cb9-403"><a href="#cb9-403" aria-hidden="true" tabindex="-1"></a>    <span class="at">mean_reductions =</span> <span class="fu">mean</span>(reductions_tco2),</span>
+<span id="cb9-404"><a href="#cb9-404" aria-hidden="true" tabindex="-1"></a>    <span class="at">uaf =</span> uaf,</span>
+<span id="cb9-405"><a href="#cb9-405" aria-hidden="true" tabindex="-1"></a>    <span class="at">hw_90_pct =</span> (hw_90 <span class="sc">/</span> <span class="fu">mean</span>(reductions_tco2)) <span class="sc">*</span> <span class="dv">100</span>,</span>
+<span id="cb9-406"><a href="#cb9-406" aria-hidden="true" tabindex="-1"></a>    <span class="at">creditable_tco2 =</span> creditable,</span>
+<span id="cb9-407"><a href="#cb9-407" aria-hidden="true" tabindex="-1"></a>    <span class="at">deduction_pct =</span> uaf <span class="sc">*</span> <span class="dv">100</span></span>
+<span id="cb9-408"><a href="#cb9-408" aria-hidden="true" tabindex="-1"></a>  ))</span>
+<span id="cb9-409"><a href="#cb9-409" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb9-410"><a href="#cb9-410" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-411"><a href="#cb9-411" aria-hidden="true" tabindex="-1"></a><span class="co"># Execute simulation</span></span>
+<span id="cb9-412"><a href="#cb9-412" aria-hidden="true" tabindex="-1"></a>program_results <span class="ot">&lt;-</span> <span class="fu">jurisdictional_simulation</span>()</span>
+<span id="cb9-413"><a href="#cb9-413" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-414"><a href="#cb9-414" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span>(<span class="fu">sprintf</span>(<span class="st">"Mean Emission Reductions: %.0f tCO2</span><span class="sc">\n</span><span class="st">"</span>, program_results<span class="sc">$</span>mean_reductions))</span>
+<span id="cb9-415"><a href="#cb9-415" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span>(<span class="fu">sprintf</span>(<span class="st">"90%% CI Half-Width: %.1f%%</span><span class="sc">\n</span><span class="st">"</span>, program_results<span class="sc">$</span>hw_90_pct))</span>
+<span id="cb9-416"><a href="#cb9-416" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span>(<span class="fu">sprintf</span>(<span class="st">"Uncertainty Deduction: %.1f%%</span><span class="sc">\n</span><span class="st">"</span>, program_results<span class="sc">$</span>deduction_pct))</span>
+<span id="cb9-417"><a href="#cb9-417" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span>(<span class="fu">sprintf</span>(<span class="st">"Creditable Emissions: %.0f tCO2</span><span class="sc">\n</span><span class="st">"</span>, program_results<span class="sc">$</span>creditable_tco2))</span>
+<span id="cb9-418"><a href="#cb9-418" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
 <span id="cb9-419"><a href="#cb9-419" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb9-420"><a href="#cb9-420" aria-hidden="true" tabindex="-1"></a><span class="ss">-   </span>Minimum 10,000 iterations per crediting year</span>
-<span id="cb9-421"><a href="#cb9-421" aria-hidden="true" tabindex="-1"></a><span class="ss">-   </span>90% confidence intervals (5th and 95th percentiles)</span>
-<span id="cb9-422"><a href="#cb9-422" aria-hidden="true" tabindex="-1"></a><span class="ss">-   </span>Bootstrap sampling for unknown distributions</span>
-<span id="cb9-423"><a href="#cb9-423" aria-hidden="true" tabindex="-1"></a><span class="ss">-   </span>Conservative bias (systematic underestimation permitted)</span>
-<span id="cb9-424"><a href="#cb9-424" aria-hidden="true" tabindex="-1"></a><span class="ss">-   </span>Whole-chain integration (activity data + emission factors)</span>
-<span id="cb9-425"><a href="#cb9-425" aria-hidden="true" tabindex="-1"></a><span class="ss">-   </span>Documentation of simulation code and random seed</span>
-<span id="cb9-426"><a href="#cb9-426" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb9-427"><a href="#cb9-427" aria-hidden="true" tabindex="-1"></a><span class="fu">## 4.6 Chapter Summary</span></span>
+<span id="cb9-420"><a href="#cb9-420" aria-hidden="true" tabindex="-1"></a><span class="fu">## 4.5 Compliance Checklist</span></span>
+<span id="cb9-421"><a href="#cb9-421" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-422"><a href="#cb9-422" aria-hidden="true" tabindex="-1"></a><span class="ss">-   </span>At least 10,000 iterations per crediting year</span>
+<span id="cb9-423"><a href="#cb9-423" aria-hidden="true" tabindex="-1"></a><span class="ss">-   </span>90 per cent confidence intervals from the 5th and 95th percentiles</span>
+<span id="cb9-424"><a href="#cb9-424" aria-hidden="true" tabindex="-1"></a><span class="ss">-   </span>Bootstrap sampling for unknown distributions</span>
+<span id="cb9-425"><a href="#cb9-425" aria-hidden="true" tabindex="-1"></a><span class="ss">-   </span>Conservative bias, with systematic underestimation permitted</span>
+<span id="cb9-426"><a href="#cb9-426" aria-hidden="true" tabindex="-1"></a><span class="ss">-   </span>Whole-chain integration of activity data and emission factors</span>
+<span id="cb9-427"><a href="#cb9-427" aria-hidden="true" tabindex="-1"></a><span class="ss">-   </span>Documentation of simulation code and random seed</span>
 <span id="cb9-428"><a href="#cb9-428" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb9-429"><a href="#cb9-429" aria-hidden="true" tabindex="-1"></a>Monte Carlo simulation aggregates component uncertainties into conservativeness deductions determining credit issuance. Strategic optimization prioritizes dominant sources, such as emission factors in Tier 1 programs or activity data in high-resolution systems. Single-year simulation, deterministic reference levels, and systematic improvements achieve attractive uncertainty reductions, directly increasing revenue and while meeting ART-TREES Section 8 requirements.</span>
+<span id="cb9-429"><a href="#cb9-429" aria-hidden="true" tabindex="-1"></a><span class="fu">## 4.6 Chapter Summary</span></span>
+<span id="cb9-430"><a href="#cb9-430" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-431"><a href="#cb9-431" aria-hidden="true" tabindex="-1"></a>Monte Carlo simulation combines the component uncertainties into the conservativeness deduction that sets credit issuance, and effort is best spent on the dominant source, which is the emission factor in a Tier 1 program and the activity data in a system built on high-resolution imagery. Single-year simulation, a fixed reference level and steady improvement of each input lower the deduction, raise revenue and meet the ART-TREES Section 8 requirements.</span>
 </code><button title="Copy to Clipboard" class="code-copy-button" data-in-quarto-modal=""><i class="bi"></i></button></pre></div>
 </div></div></div></div></div>
 </div> <!-- /content -->

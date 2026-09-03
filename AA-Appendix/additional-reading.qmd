@@ -6,7 +6,7 @@ editor:
 
 ## Additional Reading
 
-#### *Allometric Uncertainty:*
+#### Allometric Uncertainty
 
 -   Aholoukpè, H. N. S., Dubos, B., Deleporte, P., Flori, A., Amadji, L. G., Chotte, J.-L., &
     Blavet, D. (2018). Allometric equations for estimating oil palm stem biomass in the ecological
@@ -28,7 +28,7 @@ editor:
     or generic allometric equations: Which option is better when estimating the biomass of mexican
     tropical humid forests? *Carbon Management*, *11*(3), 241–249.
 -   McRoberts, R. E., & Westfall, J. A. (2016). Propagating uncertainty through individual tree
-    volume model predictions to large-area volume estimates. *Annals of Forest Science*, *73*(ue 3),
+    volume model predictions to large-area volume estimates. *Annals of Forest Science*, *73*(3),
     625–633. <https://doi.org/10.1007/s13595-015-0473-x>
 -   Nickless, A., Scholes, R. J., & Archibald, S. (2011). A method for calculating the variance and
     confidence intervals for tree biomass estimates obtained from allometric equations. *South
@@ -68,7 +68,7 @@ editor:
     Research*, *55*, 1–19.
 -   Yanai, R. D., Battles, J. J., Richardson, A. D., Blodgett, C. A., Wood, D. M., &
     Rastetter, E. B. (2010). Estimating uncertainty in ecosystem budget calculations. *Ecosystems
-    (New York, N.Y.)*, *13*(ue 2), 239–248. <https://doi.org/10.1007/s10021-010-9315-8>
+    (New York, N.Y.)*, *13*(2), 239–248. <https://doi.org/10.1007/s10021-010-9315-8>
 -   Yokelson, R.J., et al. (2013). Coupling field and laboratory measurements to estimate the
     emission factors of identified and unidentified trace gases for prescribed fires. Atmospheric
     Chemistry and Physics, 13, 89-116.
@@ -76,7 +76,7 @@ editor:
     coefficients and bayesian estimation of aboveground tree biomass. *Forest Ecology and
     Management*, *277*, 173–179.
 
-#### *Emission Factor Uncertainty:*
+#### Emission Factor Uncertainty
 
 -   Andreae, M.O. (2019). Emission of trace gases and aerosols from biomass burning – an updated
     assessment. Atmospheric Chemistry and Physics, 19, 8523-8546. doi:10.5194/acp-19-8523-2019
@@ -104,7 +104,7 @@ editor:
 -   van Leeuwen, T.T., & van der Werf, G.R. (2011). Spatial and temporal variability in the ratio of
     trace gases emitted from biomass burning. Atmospheric Chemistry and Physics, 11, 3611-3629.
 
-#### *Activity Data Uncertainty:*
+#### Activity Data Uncertainty
 
 -   Butler, B. J., Sass, E. M., Gamarra, J. G., Campbell, J. L., Wayson, C., Olguín, M., Carrillo,
     O., & Yanai, R. D. (2024). Uncertainty in REDD+ carbon accounting: A survey of experts involved
@@ -134,13 +134,13 @@ editor:
     strata are different from the map classes. International Journal of Remote Sensing, 35(13),
     4923-4939.
 
-#### *Monte Carlo Methods:*
+#### Monte Carlo Methods
 
 -   Holdaway, R. J., McNeill, S. J., Mason, N. W. H., & Carswell, F. E. (2014). Propagating
     uncertainty in plot-based estimates of forest carbon stock and carbon stock change. *Ecosystems
-    (New York, N.Y.)*, *17*(ue 4), 627–640. <https://doi.org/10.1007/s10021-014-9749-5>
+    (New York, N.Y.)*, *17*(4), 627–640. <https://doi.org/10.1007/s10021-014-9749-5>
 -   Keller, M., Palace, M., & Hurtt, G. (2001). Biomass estimation in the tapajos national forest,
-    brazil. *Forest Ecology and Management*, *154*(ue 3), 371–382.
+    brazil. *Forest Ecology and Management*, *154*(3), 371–382.
 -   Molto, Q., Rossi, V., & Blanc, L. (2013). Error propagation in biomass estimation in tropical
     forests. Methods in Ecology and Evolution, 4(2), 175–183.
     <https://doi.org/10.1111/j.2041-210x.2012.00266.x>
@@ -148,7 +148,7 @@ editor:
     Rastetter, E. B. (2010). Estimating uncertainty in ecosystem budget calculations. Ecosystems,
     13(2), 239–248. <https://doi.org/10.1007/s10021-010-9315-8>
 
-#### *Biostatistical Theory:*
+#### Biostatistical Theory
 
 -   Buchanan, M. (2000). Ubiquity: Why Catastrophes Happen. Three Rivers Press.
 -   Mandelbrot, B. B., & Hudson, R. L. (2004). The Misbehavior of Markets: A Fractal View of
@@ -157,7 +157,9 @@ editor:
     Life. Hyperion.
 -   Taleb, N. N. (2007). The Black Swan: The Impact of the Highly Improbable. Random House.
 
-#### IPCC Guidelines & Key Sections
+#### IPCC Guidelines
+
+The table lists the equations, tables and decision trees in the IPCC guidelines that the chapters draw on, with a page link for each.
 
 | Resource | Description | Source |
 |---------------------------------------------------------|-------------------------------------------------------|--------------|
@@ -180,4 +182,4 @@ editor:
 | Ch.6 Grasslands | Tbl 6.4 Default biomass stocks on converted grasslands | [Link](https://www.ipcc-nggip.iges.or.jp/public/2006gl/pdf/4_Volume4/V4_06_Ch6_Grassland.pdf#page=27) |
 | Ch.9 Other Land | Ch.9: Near-zero SOC retention assigned to mining in "Other Lands" | [Link](https://www.ipcc-nggip.iges.or.jp/public/2006gl/pdf/4_Volume4/V4_09_Ch9_Other_Land.pdf#page=7) |
 | IPCC 2013 Wetland Supplement | Tb.1.1 Look-up table for wetlands by vegetation and soil type | [Link](https://www.ipcc.ch/site/assets/uploads/2018/03/Wetlands_Supplement_Entire_Report.pdf#page=30) |
-| IPCC 2023 AR6 Updated GWPs | Tb.7.15 Updated GWPs for N₂O and fossil-specific CH₄ \*\*\* | [Link](https://www.ipcc.ch/report/ar6/wg1/downloads/report/IPCC_AR6_WGI_Chapter07.pdf#page=95) |
+| IPCC 2023 AR6 Updated GWPs | Tb.7.15 Updated GWPs for N₂O and fossil-specific CH₄ | [Link](https://www.ipcc.ch/report/ar6/wg1/downloads/report/IPCC_AR6_WGI_Chapter07.pdf#page=95) |

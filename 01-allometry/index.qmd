@@ -25,14 +25,14 @@ csl: ../references/apa.csl
 
 ## Overview {.unnumbered}
 
-Allometric equations represent the proportional and scaling relationships between different tree dimensions, such as the relationship between a tree's diameter and its height, biomass, or crown size. When trees are considered at a population scale, their different dimensions are statistically related through shared ontogenic development patterns [@gould1966allometry]. These relationships remain consistent across tree sizes, from saplings to canopy dominants, when growing under similar conditions [@king1996allometry; @archibald2003a; @bohlman2006allometry; @dietze2008capturing].
+Allometric equations describe the proportional relationships between tree dimensions, such as the relationship between a tree's diameter and its height, biomass or crown size. Across a population these dimensions are statistically related because trees share the same pattern of development from seedling to maturity [@gould1966allometry], and the relationships hold across tree sizes, from saplings to canopy dominants, where growing conditions are similar [@king1996allometry; @archibald2003a; @bohlman2006allometry; @dietze2008capturing].
 
-This biological principle underpins REDD+ carbon accounting: allometric equations translate field measurements of diameter at breast height (DBH) into biomass estimates, forming the foundation of emission reduction quantification.
+REDD+ carbon accounting rests on this principle, because allometric equations convert field measurements of diameter at breast height (DBH) into biomass estimates, and every emission reduction is quantified from those estimates.
 
 ::: callout-tip
 ## Allometry Investment
 
-Although Section 8 exempts structural allometric uncertainty when models are applied consistently, the choice of which model to apply directly impacts reported uncertainty. Allometry variance is absolute and compounds more dramatically so that model selection determines the magnitude of random error that cannot be exempted downstream. In practical terms, selecting a model with 20% RMSE versus 8% RMSE determines whether your project faces a 6% or 2% carbon credit deduction, representing a difference worth \$200k in a 1M tCO~2~^-e^ project at \$5/tonne.
+Section 8 exempts structural allometric uncertainty when a model is applied consistently, but the choice of model still sets the reported uncertainty, because allometric variance is absolute, compounds through every later step and cannot be exempted downstream. A model with 20 per cent RMSE rather than 8 per cent RMSE is the difference between a 6 per cent and a 2 per cent carbon credit deduction, worth \$200k in a 1M tCO~2~^-e^ project at \$5/tonne.
 :::
 
 ### Environment Setup (R) {.unnumbered}
@@ -136,76 +136,65 @@ from tabulate import tabulate
 
 ## 1.1 Allometric Equations {#sec-allometry-relationship}
 
-In its broadest sense, allometry describes any linear or non-linear correlation between increases in tree dimensions during ontogenic development [@picard2012a]. A more restrictive definition, originating with @huxley1924constant, refers specifically to proportional relationships between relative increases in dimensions:
-
-Allometric equations predict aboveground biomass from diameter measurements using species- or biome-specific parameters. Uncertainty compounds from three sources: model selection, parameter estimation, and field measurements. Log-transformation adds complexity through required back-transformation:
+In its broadest sense, allometry describes any linear or non-linear correlation between increases in tree dimensions during development [@picard2012a]. A narrower definition, from @huxley1924constant, refers only to a proportional relationship between the relative increases in two dimensions, written as
 
 $$
 \frac{\mathrm{d}B}{B} = a\frac{\mathrm{d}D}{D}
 $$
 
-which integrates to the power relationship:
+which integrates to the power relationship
 
 $$
 AGB = \alpha \times DBH^{\beta}
 $$
 
-and in logarithmic form:
+and in logarithmic form
 
 $$
 \ln(AGB) = \ln(\alpha) + \beta \times \ln(DBH) + \epsilon
 $$
 
-Where:
+where
 
--   `AGB`: Aboveground biomass (kg)
--   `DBH`: Diameter at breast height (cm)
--   `α`, `β`: Modelling exponents/parameters
--   `ε`: Random error term
+-   `AGB` is aboveground biomass in kg
+-   `DBH` is diameter at breast height in cm
+-   `α` and `β` are the model parameters
+-   `ε` is the random error term
 
-This power-law form reflects the self-similarity principle observed in tree growth: as trees develop from seedlings to mature individuals, they maintain consistent proportional relationships between their dimensions [@gould1971geometric]. In this framework, the exponent `β` serves as the allometric coefficient, quantifying how one dimension changes relative to another during growth. For example, if β = 2.5, a 10% increase in diameter corresponds to a 25% increase in biomass. The parameter `α` is a scaling constant accounting for wood density, architectural form, and other species-specific characteristics.
+Allometric equations predict aboveground biomass from diameter using species- or biome-specific parameters, and their uncertainty compounds from three sources, model selection, parameter estimation and field measurement. Log-transformation adds a further step, because predictions on the log scale must be back-transformed to the original scale.
 
-@west1997general and @enquist1999allometric developed an allometric scaling theory based on the "pipe model" [@shinozaki1964quantitative] and physical growth principles. Their framework predicts a universal exponent of `β` ≈ 2.67 based on biomechanical constraints, tree stability, and hydraulic resistance. While this theoretical exponent has been debated regarding its universality [@zianis2004simplifying; @muller2006testing], it provides a physically grounded benchmark for evaluating empirical equations.
+The power-law form reflects the self-similarity seen in tree growth, in that trees keep the same proportional relationships between their dimensions as they develop from seedling to maturity [@gould1971geometric]. The exponent `β` is the allometric coefficient and quantifies how one dimension changes relative to another during growth, so that with β = 2.5 a 10 per cent increase in diameter corresponds to a 25 per cent increase in biomass. The parameter `α` is a scaling constant that accounts for wood density, architectural form and other species-specific traits.
 
-In this chapter, we compare allometry species-specific allometry with biome-generic equations that are more commonly applied in REDD+ programs to demonstrate how uncertainty metrics can inform model selection and impact carbon credit deductions. We adopt the broadest definition of allometry as any correlation between tree dimensions, whether in linear, log-log, power-law, or other functional forms, to examine the following questions:
+@west1997general and @enquist1999allometric developed an allometric scaling theory from the pipe model [@shinozaki1964quantitative] and physical principles of growth, which predicts a universal exponent of `β` ≈ 2.67 from biomechanical constraints, tree stability and hydraulic resistance. Whether the exponent is universal has been debated [@zianis2004simplifying; @muller2006testing], but it remains a physically grounded benchmark against which empirical equations can be judged.
 
--   How should uncertainty metrics inform model selection and optimization?
--   How does allometry uncertainty impacts carbon credit deductions
+This chapter compares species-specific allometry with the biome-generic equations more commonly applied in REDD+ programs, to show how uncertainty metrics can inform model selection and how that choice changes carbon credit deductions. Allometry is taken in its broadest sense, as any correlation between tree dimensions, whether linear, log-log, power-law or another functional form, and the chapter examines two questions.
+
+1.  How should uncertainty metrics inform model selection and optimization?
+2.  How does allometric uncertainty change carbon credit deductions?
 
 ## 1.2 Model Selection {#sec-model-selection}
 
-The choice of allometric equation directly determines uncertainty magnitude and carbon credit deductions. This section demonstrates quantitative differences between equation categories using the `scbi_stem1` dataset from the [ForestGEO](https://docs.ropensci.org/allodb/reference/scbi_stem1.html) plot inventory in Front Royal, Virginia. This 25.6-hectare mature secondary forest is dominated by Appalachian mixed hardwood species including tulip poplar (*Liriodendron tulipifera*), oaks (*Quercus spp.*), and hickories (*Carya spp.*), representing typical stand composition of the Blue Ridge and Piedmont regions.
+The choice of allometric equation sets the size of the uncertainty and of the carbon credit deduction. This section shows the differences between equation categories using the `scbi_stem1` dataset from the [ForestGEO](https://docs.ropensci.org/allodb/reference/scbi_stem1.html) plot inventory in Front Royal, Virginia, a 25.6-hectare mature secondary forest dominated by Appalachian mixed hardwoods, including tulip poplar (*Liriodendron tulipifera*), oaks (*Quercus spp.*) and hickories (*Carya spp.*), which is a typical stand composition for the Blue Ridge and Piedmont regions.
 
-For REDD+ carbon accounting, we tend to focus exclusively on ontogenic allometry to estimate relationships between accessible tree dimensions and total aboveground biomass as trees grow from seedling to maturity. However, some reading of evolutionary allometry is sometimes needed to address differences in specific traits that emerged in localized conditions. For example, the following species share in genus but vary in wood density, branch architecture, and bole form:
-
--   *Acer rubrum* (red maple): Lower density (0.49 g/cm³), faster growth
--   *Acer saccharum* (sugar maple): Higher density (0.63 g/cm³), denser wood
--   *Acer negundo* (box elder): Intermediate density (0.42 g/cm³), different architecture
+REDD+ carbon accounting relies almost entirely on ontogenic allometry, the relationship between measurable tree dimensions and total aboveground biomass as a tree grows from seedling to maturity. Some knowledge of evolutionary allometry, the differences in traits that arose under local conditions, is still needed at times, because species within one genus can differ in wood density, branch architecture and bole form. Red maple (*Acer rubrum*) has a lower density (0.49 g/cm³) and faster growth, sugar maple (*Acer saccharum*) a higher density (0.63 g/cm³) and denser wood, and box elder (*Acer negundo*) an intermediate density (0.42 g/cm³) and a different architecture.
 
 ### Types of Equations
 
-Allometric equations are classified by taxonomic scope and environmental specificity. In practice, the choice of equation category involves balancing precision, cost, and data availability:
+Allometric equations are classified by taxonomic scope and environmental specificity, and the choice of category is a balance of precision, cost and data availability. Species-specific equations are developed from destructive sampling of the target species and give the highest accuracy but limited geographic applicability [@gonzalez2022allodb], because they capture the traits of that species, such as branching architecture and wood density, that set its biomass allocation. Genus-specific equations are aggregated across several species within a genus and offer broader applicability with moderate accuracy [@jansen1996opbrengsttabellen; @jenkins2004comprehensive], on the assumption that shared evolutionary heritage produces similar scaling within a genus.
 
-1.  Species-Specific Equations: Developed from destructive sampling of target species, providing highest accuracy but limited geographic applicability [@gonzalez2022allodb]. These equations capture species-specific morphometric traits, such as branching architecture and wood density, which influence biomass allocation.
-2.  Genus-Specific Equations: Aggregated across multiple species within a genus, offering broader applicability with moderate accuracy [@jansen1996opbrengsttabellen; @jenkins2004comprehensive]. Assumes shared evolutionary heritage produces similar allometric scaling within genera.
-3.  Biome-Generic Equations: Most commonly used in REDD+ report, pan-tropical, generic equations fitted across broader geographic regions and biomes, maximizing applicability but potentially introducing bias [@chave2009towards; @chave2014improved; @west1997general; @brown1997a]. Often incorporate wood density (WD) or environmental stress factors to capture regional variation.
-4.  Environmentally-Conditioned Equations: Gold-standard allometric models that incorporate biophysical variables reflecting site-specific growing conditions, critical for REDD+ programs in specialized ecosystems [@rahman2021biomass; @komiyamaAllometryBiomassProductivity2008; @komiyama2005common]. These equations explicitly model environmental drivers of growth variation:
-    -   Salinity gradients: Mangrove allometry where salt stress affects growth rate, wood density, and architectural form
-    -   Soil fertility: Nutrient availability influencing wood density and height-diameter relationships
-    -   Climate: Temperature and precipitation gradients captured through environmental stress factors
-    -   Geomorphology: Tidal inundation frequency, elevation, or hydrological regime
+Biome-generic equations, the most common in REDD+ reports, are pan-tropical equations fitted across broad regions and biomes, which maximizes applicability but can introduce bias [@chave2009towards; @chave2014improved; @west1997general; @brown1997a], and they often include wood density (WD) or an environmental stress factor to capture regional variation. Environmentally conditioned equations are the gold standard and include biophysical variables that reflect the growing conditions of the site, which matters for REDD+ programs in specialized ecosystems [@rahman2021biomass; @komiyamaAllometryBiomassProductivity2008; @komiyama2005common]. These equations model the environmental causes of growth variation directly, such as the salinity gradient in a mangrove, where salt stress changes growth rate, wood density and form, the soil fertility that shapes wood density and the height-diameter relationship, the temperature and precipitation gradients captured by an environmental stress factor, and the geomorphology of tidal inundation, elevation or hydrological regime.
 
 ::: callout-tip
 ## Mangroves Tree Height
 
-In specialized growing environments, such as mangrove habitats, the choice of allometry significantly affects accuracy estimates. For example, @rocha2018reducing found generic allometries to produce -18% & +14% wider error magins than species-specific equations in Brazilian mangrove forests. To compensate, generic equations incorporate proxies of environmental stress, such as wood density, height-diameter ratios or "stunting", and species composition.
+In specialized growing environments such as mangroves, the choice of allometry has a large effect on accuracy. @rocha2018reducing found that generic allometries produced error margins -18 per cent and +14 per cent wider than species-specific equations in Brazilian mangrove forests. Generic equations compensate by including proxies of environmental stress, such as wood density, height-diameter ratio or stunting, and species composition.
 
-However, while inclusion of tree height significantly reduces bias in AGB estimates [@rutishauser2013generic; @chave2014improved], the accurate measurement of tree height in closed-canopy forests is especially challenging[@king2011allometry]. Field data with high levels of tree height variance can limit these destructively sampled allometry models. This represents investment opportunity from reducing uncertainty through improved survey technology, such as LiDAR and RADAR [@feldpausch2011height; @valbuena2016sensitivity].
+Including tree height reduces bias in AGB estimates [@rutishauser2013generic; @chave2014improved], but tree height is hard to measure accurately in closed-canopy forest [@king2011allometry], and field data with high variance in height limit the destructively sampled models built on them. Better survey technology, such as LiDAR and RADAR, is therefore an investment that reduces uncertainty [@feldpausch2011height; @valbuena2016sensitivity].
 :::
 
 #### Data Preparation {.unnumbered}
 
-We imported the scbi_stem1 dataset from the allodb package, which contains 2,287 individual tree measurements from the ForestGEO permanent plot at Front Royal, Virginia. The dataset includes 12 families, spanning multiple genera and species (Table 1.1). This taxonomic diversity allows us to demonstrate equation selection across different levels of specificity.
+The scbi_stem1 dataset was imported from the allodb package. It holds 2,287 individual tree measurements from the ForestGEO permanent plot at Front Royal, Virginia, across 12 families and many genera and species (Table 1.1), a diversity that allows equation selection to be shown at each level of specificity.
 
 ```{r}
 #| comment: NA
@@ -249,17 +238,17 @@ demo_data_py = pd.read_csv("./data/scbi_stem1.csv")
 ::: callout-tip
 ## Compiling Allometries
 
-Scope permitting, this training would examine a full allometry workflow. Effectively, this which would require repeating the same process below for all genus in our field dataset, incorporating equations per species cumulatively. We provide brief demonstration of how to add each new equations using `alldob` operations.
+A full allometry workflow would repeat the process below for every genus in the field dataset, adding equations species by species, which is beyond the scope of this training. A brief demonstration of how to add each new equation with `allodb` operations is given instead.
 :::
 
-We filter `scbi_stem1` to *Quercus* observations, the largest genus subsample, to compare the scaling impact of generic allometry with subspecies and genus equations. Missing entries are also removed, providing a new sample of 84 stems from the dataset's total measurements of 2,287 trees.
+`scbi_stem1` was filtered to *Quercus*, the largest genus in the sample, so that the scaling of generic allometry could be compared with species and genus equations. Rows with missing entries were also removed, leaving 84 stems from the dataset's 2,287 trees. The variables kept were
 
--   `dbh`: Diameter at breast height (cm)
--   `genus`: Taxonomic genus identification
--   `species`: Species epithet
--   `Family`: Taxonomic family classification
+-   `dbh`, diameter at breast height (cm)
+-   `genus`, the taxonomic genus
+-   `species`, the species epithet
+-   `Family`, the taxonomic family
 
-To demonstrate the comparative analysis, we created two filtered subsets: a genus-level dataset containing all Quercus observations (n=84 stems) and a species-specific subset for Quercus rubra. Missing DBH values were removed to ensure clean input for subsequent allometric calculations. The filtering procedure is detailed in Section 1.6.
+Two subsets were created for the comparison, a genus-level dataset of all *Quercus* observations (n=84 stems) and a species-specific subset of *Quercus rubra*. Missing DBH values were removed before any allometric calculation. The filtering procedure is given in full in Section 1.6.
 
 ```{r}
 #| comment: NA
@@ -316,7 +305,7 @@ psych::describe(scbi_quercus_tbl) |>
 #	flextable::autofit()
 ```
 
-At this stage in the workflow, it helps to quickly scan the range and spread in DBH values. Applied directly, candidate equations can be filtered by min and max dbh values Deviation from the mean provides indicators of the statistical operations needed ahead during equation selection, bias correction, and model optimization. It also informs sample.
+At this stage it helps to scan the range and spread of the DBH values, because candidate equations can be filtered directly by their minimum and maximum DBH, and the deviation from the mean indicates which statistical steps will be needed later in equation selection, bias correction and model optimization. It also informs the sampling design.
 
 ```{python}
 #| comment: NA
@@ -361,14 +350,14 @@ print(tabulate(desc_stats,
 
 ### Equation Selection
 
-Following best practices from forest inventory methodology [@duncansonAbovegroundWoodyBiomass2021], equation selection may proceed through the four sequential criteria in order of their priority below:
+Following forest inventory practice [@duncansonAbovegroundWoodyBiomass2021], equation selection proceeds through four criteria in order of priority.
 
--   Geographic Proximity: Prioritize equations developed in climates and soil conditions similar to your project area
--   Taxonomic Specificity: Prefer species-level \> genus-level \> family-level equations
--   DBH Range Coverage: Ensure equation applicability spans ≥80% of measured diameter distribution
--   Sample Size Adequacy: Minimum n=50 trees for species-specific; n\>150 for genus-level equations[^index-2]
+1.  Geographic proximity, preferring equations developed in climates and soils similar to the project area
+2.  Taxonomic specificity, preferring species-level over genus-level over family-level equations
+3.  DBH range coverage, requiring that the equation's range spans at least 80 per cent of the measured diameter distribution
+4.  Sample size, requiring a minimum of n=50 trees for a species-specific equation and n\>150 for a genus-level equation[^index-2]
 
-The allodb equations database contains 570 allometric equations with 47 metadata fields documenting equation provenance, geographic origin, taxonomic scope, DBH range, sample size, and model fitting parameters. Key selection criteria include geographic coordinates (lat/long), equation taxa, allometry specificity (species/genus/family), DBH range (min/max), sample size, and bias correction status. The complete metadata structure is available in Section 1.6.
+The allodb equations database holds 570 allometric equations with 47 metadata fields that record provenance, geographic origin, taxonomic scope, DBH range, sample size and model fitting parameters. The fields used in selection are the geographic coordinates, the equation taxa, the allometry specificity (species, genus or family), the minimum and maximum DBH, the sample size and the bias correction status. The complete metadata structure is listed in Section 1.6.
 
 ```{r}
 #| message: false
@@ -384,7 +373,7 @@ data("equations_metadata")
 dplyr::glimpse(equations)
 ```
 
-*Table X: Full list of variables in `equations` metadata available used in selection criteria using `allodb` package below.*
+*Table X. Variables in the `equations` metadata of the `allodb` package that are available as selection criteria.*
 
 ```{r}
 #| context: setup
@@ -448,17 +437,14 @@ eq_tab_acer_clean = eq_tab_acer |> dplyr::mutate(
 ::: callout-tip
 ## Navigating Databases
 
--   It is recommend using latitude and longitude variables over the field called `geographic_area` when filtering `allodb` database due to entry inconsistencies. This is done below using `dplyr` SQL. However, once the specific allometric equation is identified, we must re-select it using the `allodb` native function called `new_equations()` and the equation's ID# [@allodb].
--   In subsequent cells, we import pan-tropical equations and fit them with values from by Global Wood Density database using the `computeAGB()` and`getWoodDensity()` functions from the `BIOMASS` package [@BIOMASS-2].
+Filter the `allodb` database by latitude and longitude rather than by the `geographic_area` field, whose entries are inconsistent. The filter below uses `dplyr`. Once the equation is identified, it must be re-selected with the native `allodb` function `new_equations()` and the equation's ID [@allodb].
+
+Later cells import pan-tropical equations and fit them with values from the Global Wood Density database using the `computeAGB()` and `getWoodDensity()` functions of the `BIOMASS` package [@BIOMASS-2].
 :::
 
-#### Step 1: Geographic Selection
+#### Geographic Filter
 
-We recommend using latitude and longitude variables over the field called `geographic_area` when filtering `allodb` database due to entry inconsistencies. This is done below using `dplyr` SQL. However, once the specific allometric equation is identified, we must re-select it using the `allodb` native function called `new_equations()` and the equation's ID# [@allodb].
-
-In subsequent cells, we import pan-tropical equations and fit them with values from by Global Wood Density database using the `computeAGB()` and`getWoodDensity()` functions from the `BIOMASS` package [@BIOMASS-2].
-
-We filtered equations to North America using latitude bounds of 24-72°N and longitude bounds of -168 to -52°W. This geographic constraint ensures climate similarity with our Front Royal, Virginia study site (Cfa - humid subtropical classification). The filter retained 157 equations from the original 570, including equations developed in temperate forests across the eastern United States, southeastern Canada, and Alaska.
+In the first step, equations were filtered to North America using latitude bounds of 24-72°N and longitude bounds of -168 to -52°W, which keeps the climate similar to that of the Front Royal, Virginia site (Cfa, humid subtropical). The filter retained 157 equations of the original 570, including equations developed in temperate forests across the eastern United States, southeastern Canada and Alaska.
 
 ```{r}
 #| comment: NA
@@ -484,7 +470,7 @@ head(eq_region[, show_cols]) |>
 cat(sprintf("Equations valid to region: %d\n", nrow(eq_region)))
 ```
 
-#### Step 2: Taxonomic Selection
+#### Taxonomic Filter
 
 ```{r}
 #| comment: NA
@@ -520,7 +506,7 @@ cat(sprintf("Genus-specific equations valid to region: %d\n", nrow(eq_region_gen
 cat(sprintf("Species-specific equations valid to region: %d\n", nrow(eq_region_species)))
 ```
 
-#### Step 3: DBH Matching Selection
+#### DBH Filter
 
 ```{r}
 #| comment: NA
@@ -566,11 +552,11 @@ cat(sprintf("Specific-specific equations valid for region, Quercus, & DBH range:
 view(equations)
 ```
 
-#### Step 4: Sample Size Selection
+#### Sample Size Filter
 
-The required sample size for allometric equation development depends on desired precision and diameter distribution. @roxburgh2015guidelines demonstrated through Monte Carlo resampling that biomass predictions with a standard deviation within 7.5% of mean demands sample sizes of between 17 and 166, depending on the algorithm employed. Most importantly, stratified sampling across age class or dbh size is critical to improving precision.
+The sample size needed to develop an allometric equation depends on the precision required and on the diameter distribution. @roxburgh2015guidelines showed by Monte Carlo resampling that a biomass prediction with a standard deviation within 7.5 per cent of the mean needs between 17 and 166 trees, depending on the algorithm, and that stratified sampling across age class or DBH size does most to improve precision.
 
-Following Roxburgh et al. (2015), we applied a minimum sample size threshold of n ≥ 17 to ensure equations were derived from adequate destructive sampling campaigns. This threshold balances precision requirements (coefficient of variation ≤7.5%) with practical constraints of destructive sampling costs. Stratification across DBH size classes during equation development is equally critical for capturing biomass variance across age cohorts.
+Following @roxburgh2015guidelines, a minimum sample size of n ≥ 17 was applied so that every retained equation rested on an adequate destructive sampling campaign. The threshold balances the precision requirement (coefficient of variation ≤7.5 per cent) against the cost of destructive sampling. Stratification across DBH size classes during equation development matters as much, because it captures the biomass variance across age cohorts.
 
 ```{r}
 #| comment: NA
@@ -634,57 +620,43 @@ equation_metadata |>
 
 ```
 
-*Table X: Equation Selection Documentation for REDD+ MRV*
+*Table X. Equation selection documentation for REDD+ MRV*
 
 |  |  |
 |----|----|
 | Attribute | Detail |
-| Equation Taxa/ID | *Quercus* spp. (Genus-level) |
-| Biomass Method | Non-destructive estimation using Terrestrial Laser Scanning (TLS) or Terrestrial LiDAR to model tree volume, which was then converted to biomass using published wood density values. |
-| Geographic Location | Front Royal, Virginia, USA (Smithsonian Conservation Biology Institute, SCBI) at 38.89 N, -78.15W. |
-| Empirical Data | The models were developed using 258 non-destructive volume/biomass estimates across 10 dominant hardwood species in this Temperate Mixed Deciduous Forest. The specific equation is a site-specific genus model. |
-| Rationale for Selection | This equation is the most geographically and ecologically similar candidate. It was developed at the exact same site (SCBI in Virginia) where your sample data is likely sourced (based on `allodb.Rmd`content). Despite being a genus-level equation for Quercus (not species-specific), the high degree of climate similarity (Cfa/Temperate Forest) and geographic proximity ensures maximum weight will be assigned by the `allodb` weighting framework, making it the highest priority candidate for Quercus trees at this site. |
+| Equation taxa | *Quercus* spp. (genus-level) |
+| Biomass method | Non-destructive estimation using terrestrial laser scanning (TLS) to model tree volume, which was then converted to biomass using published wood density values. |
+| Geographic location | Front Royal, Virginia, USA (Smithsonian Conservation Biology Institute, SCBI) at 38.89 N, -78.15W. |
+| Empirical data | The models were developed from 258 non-destructive volume and biomass estimates across 10 dominant hardwood species in this temperate mixed deciduous forest. The equation is a site-specific genus model. |
+| Rationale for selection | This equation is the most geographically and ecologically similar candidate, because it was developed at the same site (SCBI in Virginia) from which the sample data are drawn. Although it is a genus-level equation for *Quercus* rather than species-specific, the climate similarity (Cfa, temperate forest) and geographic proximity mean that the `allodb` weighting framework assigns it the maximum weight, making it the highest priority candidate for *Quercus* trees at this site. |
 | Citation | Stovall, A. E., Anderson-Teixeira, K. J., & Shugart, H. H. (2018). Terrestrial LiDAR-derived non-destructive woody biomass estimates for 10 hardwood species in Virginia. *Data in brief*, *19*, 1560-1569 |
 
 |  |  |
 |----|----|
 | Attribute | Detail |
-| Equation Taxa/ID | Quercus rubra (Species-level) |
-| Biomass Method | Destructive Harvesting (Dimensional Analysis). The traditional method involving felling, weighing, and drying tree components to directly measure biomass. |
-| Geographic Location | West Virginia, USA (specifically, Monongahela National Forest). |
-| Empirical Data | This is a species-specific equation developed explicitly for Northern Red Oak (Quercus rubra). The sample size is typically smaller than meta-analyses but provides high-resolution, direct measurements. |
-| Rationale for Selection | This equation provides high taxonomic specificity (a perfect species match for Quercus rubra). Although its location (West Virginia) is not as proximate as the Stovall (2018) study, it is still within the same Appalachian/Eastern US Temperate Forest region. It serves as a crucial check and source of high-quality empirical data derived from the gold-standard destructive method. `allodb` balances its lower geographic proximity with its higher taxonomic specificity and robust methodology, making it the strongest secondary candidate. |
+| Equation taxa | *Quercus rubra* (species-level) |
+| Biomass method | Destructive harvesting (dimensional analysis), the traditional method of felling, weighing and drying tree components to measure biomass directly. |
+| Geographic location | West Virginia, USA (Monongahela National Forest). |
+| Empirical data | A species-specific equation developed for northern red oak (*Quercus rubra*). The sample size is smaller than that of a meta-analysis but the measurements are direct. |
+| Rationale for selection | This equation is an exact species match for *Quercus rubra*. Its location in West Virginia is less close than the Stovall (2018) site but lies in the same Appalachian temperate forest region of the eastern United States, and it is both a check on the genus equation and a source of direct measurements from the gold-standard destructive method. `allodb` balances its lower geographic proximity against its higher taxonomic specificity, making it the strongest secondary candidate. |
 | Citation | Clark, A. (1985). *Weight, volume, and physical properties of major hardwood species in the Gulf and Atlantic Coastal Plains* (Vol. 250). US Department of Agriculture, Forest Service, Southeastern Forest Experiment Station |
 
-#### Step 5: Combining Species Equations
+#### Combining Equations
 
-The following demonstrates functions for consolidating new filtered allometry equations into one combined database prepared for use in final inventory biomass estimations. For this important task, we recommend the specific functions below from the `allodb` library that are ensure a weighted approach is applied to synthesizing and candidate equations:
+The functions below consolidate the filtered allometric equations into one combined database ready for the final inventory biomass estimates. The `allodb` functions named here apply a weighted synthesis to the candidate equations.
 
-The `weight_allom()` function is responsible for assigning a weight to each candidate equation based on three criteria, determining its influence on the final result:
+`weight_allom()` assigns each candidate equation a weight from three criteria, and the weight sets the equation's influence on the final result. Equations from larger destructive sampling campaigns (n \> 100) receive higher weights; species-specific equations are weighted above genus-level equations, which in turn outweigh family-level equations; and equations developed at nearby locations with similar temperature and precipitation take priority.
 
--   Sample size: Equations derived from varying destructive sampling campaigns (n \> 100) receive higher weights.
--   Taxonomic specificity: Species-specific equations are weighted more heavily than genus-level, which in turn outweigh family-level equations.
--   Climate similarity: Equations developed from geographically proximate locations with similar temperature and precipitation regimes receive priority.
+`resample_agb()` runs a Monte Carlo resampling procedure that builds a synthetic dataset from the weighted equations. Each candidate equation is resampled within its original DBH range, the number of resampled values per equation is proportional to its weight, and a default of 10,000 iterations (1e4 in the demonstration) gives a stable representation of the uncertainty distribution. The synthetic dataset holds the collective information of all weighted equations across the full DBH range observed in the target forest.
 
-The `resample_agb()` function implements a Monte Carlo resampling procedure to synthesize a robust, synthetic dataset from the weighted equations:
-
--   Each candidate equation is resampled within its original DBH range.
--   The number of resampled values for each equation is proportional to its assigned weight.
--   A default of 10,000 iterations (or 1e4 in the demo) ensures a robust representation of the uncertainty distribution. This process generates a synthetic dataset that reflects the collective information from all weighted equations, spanning the full DBH range observed in the target forest.
-
-The `est_params()` function then uses the synthetic resampled data to fit the following nonlinear power-law model:
+`est_params()` then fits the following nonlinear power-law model to the synthetic data,
 
 $$
-AGB = \alpha \ * \ DBH^b  \ + \ \epsilon 
+AGB = \alpha \ * \ DBH^b  \ + \ \epsilon
 $$
 
-This process yields the location-specific parameters:
-
--   ⍺ (scaling coefficient): Incorporates local wood density and architectural characteristics.
--   𝒃 (allometric exponent): Typically ranges from 2.3 to 2.7, reflecting biomechanical constraints.
--   σ (residual standard deviation): Quantifies the prediction uncertainty for the calibrated equation.
-
-The resulting equation is location-specific, informed by broader taxonomic and geographic patterns encoded in the weighted source equations.
+which yields three location-specific parameters. The scaling coefficient ⍺ reflects local wood density and architecture, the allometric exponent 𝒃 typically lies between 2.3 and 2.7 and reflects biomechanical constraints, and the residual standard deviation σ quantifies the prediction uncertainty of the calibrated equation. The resulting equation is location-specific but informed by the broader taxonomic and geographic patterns held in the weighted source equations.
 
 ```{r}
 #| comment: NA
@@ -718,30 +690,27 @@ genus = "Quercus",
 print(paste("Estimated AGB using the combined custom table:", agb_custom_estimate, "kg"))
 ```
 
-This weighted synthesis approach ensures that geographically proximate, species-specific equations with larger sample sizes exert greater influence on the final calibrated model. The resulting equation incorporates collective information from all weighted candidates while reflecting local wood density and architectural characteristics. Implementation details are provided in Section 1.6.
+The weighted synthesis gives nearby, species-specific equations with larger sample sizes the greatest influence on the calibrated model, so the result draws on every weighted candidate while reflecting local wood density and architecture. Implementation details are in Section 1.6.
 
 ::: callout-tip
 ## Allometry Best Practices
 
--   Transparency: Document all criteria and thresholds
--   Reproducibility: Code-based workflow enables auditing
--   Bias Reduction: Geographic and taxonomic filtering minimizes systematic errors to species level
--   Uncertainty Surveillance: Multiple equations enable sensitivity analysis (Section 1.5)
+Document every criterion and threshold, keep the workflow in code so that it can be audited, filter by geography and taxonomy to reduce systematic error to the species level, and keep several candidate equations so that a sensitivity analysis is possible (Section 1.5).
 :::
 
 ### Biomass Estimations
 
-Having identified candidate species equations, we now compare their aboveground biomass estimates with biome-generic equations [@chave2014improved; @brown1997a]. Noting their geographic mismatch, we compared these with pan-tropical equations specifically in order to highlight discrepancies in uncertainty and significance of geography to allometric calibrations.
+With the candidate species equations identified, their aboveground biomass estimates were compared with those of biome-generic equations [@chave2014improved; @brown1997a]. The pan-tropical equations were chosen despite the geographic mismatch, so that the difference in uncertainty would show how much geography matters to allometric calibration.
 
-We calculated aboveground biomass for all 84 Quercus stems using five allometric approaches:
+Aboveground biomass was calculated for all 84 *Quercus* stems using five approaches.
 
--   Species-specific (allodb weighted synthesis): Location-optimized equation incorporating multiple Quercus species equations
--   Genus-level (Stovall 2018): Site-specific Quercus equation from the same SCBI location
--   Chave et al. 2014 (pan-tropical moist): Generic equation incorporating wood density and environmental stress factors
--   Chave et al. 2005 (pan-tropical): Earlier generic formulation with DBH and wood density
--   Brown 1997 (tropical): Widely used generic equation based on DBH alone
+-   Species-specific (allodb weighted synthesis), a location-optimized equation drawing on several *Quercus* species equations
+-   Genus-level (Stovall 2018), a site-specific *Quercus* equation from the same SCBI plot
+-   Chave et al. 2014 (pan-tropical moist), a generic equation that includes wood density and an environmental stress factor
+-   Chave et al. 2005 (pan-tropical), an earlier generic form using DBH and wood density
+-   Brown 1997 (tropical), a widely used generic equation on DBH alone
 
-Wood density values were extracted from the Global Wood Density database (Vieilledent et al., 2018) using the BIOMASS package, yielding mean WD = 0.630 g/cm³ for Quercus species (consistent with oak hardwood density). Note that Chave’s 2014 equation’s outputs required unit conversion from Mg to kg (×1000; Chave et al, 2014, Réjou-Méchain, Tanguy, Piponiot, Chave, & Hérault, 2017), while Brown 1997 required division by 100 to match the original scale. These unit conversions are critical for accurate inter-equation comparison (see Section 1.6 for implementation).
+Wood density values were taken from the Global Wood Density database (Vieilledent et al., 2018) through the BIOMASS package, giving a mean WD of 0.630 g/cm³ for *Quercus*, consistent with oak hardwood density. The output of the Chave 2014 equation had to be converted from Mg to kg (×1000; Chave et al, 2014, Réjou-Méchain, Tanguy, Piponiot, Chave, & Hérault, 2017), and the Brown 1997 output divided by 100 to match the original scale. Without these unit conversions the equations cannot be compared (see Section 1.6 for the implementation).
 
 ```{r}
 #| comment: NA
@@ -772,12 +741,12 @@ scbi_quercus$agb_genus <- allodb::get_biomass(
 
 ```
 
-The following functions from the `BIOMASS` package [@BIOMASS] require some additional wrangling, specifically to extract values from the Global Wood Density database [@vieilledent2018new] and convert units [@rejou2017biomass].
+The `BIOMASS` functions below [@BIOMASS] need some extra handling, to extract values from the Global Wood Density database [@vieilledent2018new] and to convert units [@rejou2017biomass].
 
 ::: callout-tip
 ## Unit Conversions
 
-Always verify if equations require unit conversions or scaling limiters. For example, the most commonly used allometry equation from Chave et al (2014) requires conversion from milligrams to kilograms, as shown below (`* 1000`).
+Always check whether an equation needs a unit conversion or a scaling limit. The most widely used allometric equation, from Chave et al (2014), needs conversion from megagrams to kilograms, as shown below (`* 1000`).
 :::
 
 ```{r}
@@ -819,7 +788,7 @@ flextable::flextable(scbi_quercus) |>
 
 ```
 
-Table 1D: Aboveground biomass estimates derived from five allometry equations of varying scales
+Table 1D. Aboveground biomass estimates from five allometric equations of different scales
 
 ```{r}
 #| comment: NA
@@ -845,15 +814,9 @@ Table 1D: Aboveground biomass estimates derived from five allometry equations of
 
 ### Normality Testing
 
-Non-normal distributions violate assumptions of parametric statistics, inflating uncertainty estimates. Identifying the true probability distribution enables appropriate transformations that reduce reported uncertainty—directly reducing carbon credit deductions.
+A non-normal distribution violates the assumptions of parametric statistics and inflates the uncertainty estimate, so identifying the true probability distribution allows a transformation that reduces the reported uncertainty and, with it, the carbon credit deduction. Uncertainty modeling depends on an accurate probability density function, and three diagnostics test whether a variable is normally distributed. Skewness and kurtosis quantify asymmetry and tail weight, the Shapiro-Wilk test is a formal test of normality in which p \< 0.05 rejects normality, and the Wilcoxon test is a non-parametric test of the median.
 
-Accurate probability density functions (PDFs) are essential for uncertainty modeling. We assess whether DBH and AGB conform to normal distributions using multiple diagnostic tests:
-
--   Skewness & Kurtosis: Quantify asymmetry and tail behavior
--   Shapiro-Wilk test: Formal normality test (p \< 0.05 rejects normality)
--   Wilcoxon test: Non-parametric alternative for median testing
-
-Both variables show non-normal distribution with a significant right-skew, violating parametric assumptions and justifying log-transformation in subsequent modeling. Technically, this kind of skew often represents a dataset of many small trees and few large dominants. Statistically, this high positive skewness is confirmed by Shapiro-Wilk test results (p \< 0.001) indicating a distribution likely to inflate uncertainty estimates if left untreated.
+DBH and every AGB estimate were non-normal with a strong right skew, which violates the parametric assumptions and justifies log-transformation in the later modeling. A skew of this kind usually reflects a stand of many small trees and few large dominants, and the Shapiro-Wilk results (p \< 0.001) confirmed a distribution that would inflate the uncertainty estimate if left untreated.
 
 ```{r}
 #| comment: NA
@@ -981,27 +944,13 @@ ggplot(agb_comparison, aes(x = AGB)) +
 
 ### Bivariate Testing
 
-Heteroscedasticity violates ordinary least squares assumptions, producing unreliable standard errors and inflated uncertainty estimates that threaten carbon credit revenues. The Breusch-Pagan test identifies which predictor drives heteroscedasticity by regressing squared residuals against predictor values:
+Heteroscedasticity, a variance that changes with the predictor, violates the assumptions of ordinary least squares and produces unreliable standard errors and inflated uncertainty estimates, which cost carbon credit revenue. The Breusch-Pagan test identifies which predictor causes it by regressing the squared residuals on the predictor values, with a null hypothesis (H₀) of constant variance, an alternative (H₁) of variance that changes with the predictor, and a decision rule of p \< 0.05 to reject H₀. Large trees show greater prediction variance than small trees because of the power-law scaling (AGB ∝ DBH\^2.5), and without correction the uncertainty estimate is biased upward, most of all for the canopy dominants that account for most of the cumulative biomass.
 
--   Null hypothesis (H₀): Homoscedastic (constant variance)
--   Alternative (H₁): Heteroscedastic (variance changes with predictors)
--   Decision rule: p \< 0.05 rejects H₀
-
-Large trees exhibit greater prediction variance than small trees due to power-law scaling (AGB ∝ DBH\^2.5). Without correction, uncertainty estimates are systematically upward-biased, particularly for canopy dominants that drive cumulative biomass.
-
-Test Results
-
--   BP statistic: 10.0051
--   p-value: 0.0016
--   Decision: Heteroscedasticity confirmed
-
-The diagnostic plot (Figure 1.2) shows the classic funnel pattern: small trees (DBH \< 20 cm) cluster tightly around the fitted line while large trees (DBH \> 60 cm) exhibit substantial scatter. This reflects power-law scaling where small multiplicative errors in β translate to large absolute errors for canopy dominants.
+The test returned a Breusch-Pagan statistic of 10.0051 with p = 0.0016, which confirmed heteroscedasticity. The diagnostic plot (Figure 1.2) showed the classic funnel, in that small trees (DBH \< 20 cm) clustered tightly around the fitted line while large trees (DBH \> 60 cm) scattered widely, because under power-law scaling a small multiplicative error in β becomes a large absolute error for a canopy dominant.
 
 #### Common Corrections
 
--   Log-transformation of both variables
--   Weighted regression for residual heteroscedasticity
--   Robust standard errors to supplement transformation
+Three corrections are common, log-transformation of both variables, weighted regression for any residual heteroscedasticity, and robust standard errors to supplement the transformation.
 
 ```{r}
 #| comment: NA
@@ -1035,47 +984,31 @@ text(x = 70, y = max(scbi_quercus$agb_species) * 0.9,
      adj = c(0, 1), cex = 0.9, font = 2)
 ```
 
-Large trees exhibit greater prediction variance than small trees due to the power-law relationship (AGB ∝ DBH^\~2.5^). Without correction, uncertainty estimates are biased upward, particularly for canopy dominants.
-
-Required corrections:
-
--   Log-transformation of both variables
--   Weighted regression for residual heteroscedasticity
--   Robust standard errors to supplement transformation
+The plot confirms that prediction variance grows with tree size under the power-law relationship (AGB ∝ DBH^\~2.5^), and the corrections above are applied in the next section, beginning with log-transformation.
 
 ## 1.3 Model Optimization
 
 ### Log-Transformation {#sec-log-rationale}
 
-Linear regression on this untransformed allometric data produces 45-60% uncertainty. Log-transformation reduces RMSE a 51 percentage point uncertainty reduction. Allometric relationships tend to follow the power law:
+Linear regression on the untransformed allometric data gives 45-60 per cent uncertainty, and log-transformation reduces RMSE by 51 percentage points. Allometric relationships tend to follow the power law
 
 $$AGB = \alpha \times DBH^{\beta}$$
 
-where β typically ranges from 2.3-2.7, meaning biomass scales with DBH raised to a power. Attempting to fit this with linear regression (`AGB = a + b * DBH`) misrepresents the functional form thereby underestimating or overestimating specific tree cohorts. Critical to crediting, this forces exponential patterns into residual noise that inflates uncertainty downstream. Alternatively, we may apply logarithmic transformations to the equation or specific variables. This linearizes the power-law relationship so that:
+where β typically lies between 2.3 and 2.7, so that biomass scales with a power of DBH. Fitting this with linear regression (`AGB = a + b * DBH`) misrepresents the functional form and under- or overestimates particular tree cohorts, and the exponential pattern is pushed into the residuals as noise that inflates uncertainty downstream, which matters for crediting. Taking logarithms of the equation instead linearizes the power law, giving
 
 $$\ln(AGB) = \ln(\alpha) + \beta \times \ln(DBH) + \epsilon$$
 
-where
-
--   `β` becomes a slope coefficient
--   Variance stabilizes across tree sizes
--   Residuals are normalized enough to satisfy OLS assumptions that our predictions are dependent on
+in which `β` becomes a slope coefficient, the variance is stable across tree sizes, and the residuals are close enough to normal to satisfy the OLS assumptions on which the predictions depend.
 
 ::: callout-important
 ## Back-Transformation
 
-As demonstrated below, it is important to back-transform the log-scale of RMSE. This converts log-scale error to proportional error on its original scale, which enables direct comparison with linear model uncertainty while preserving variance structure stabilized by log-transformation.
+The log-scale RMSE must be back-transformed, as shown below, which converts the log-scale error to a proportional error on the original scale and allows direct comparison with the linear model's uncertainty while keeping the variance structure that the log-transformation stabilized.
 :::
 
-We fitted linear and log-transformed regression models for all five allometric equations, comparing their prediction accuracy using:
+Linear and log-transformed regression models were fitted for all five allometric equations and their prediction accuracy compared on three metrics, the mean absolute error (MAE), the average absolute deviation in kg; the root mean square error (RMSE), the standard deviation of the residuals in kg; and the relative RMSE, the RMSE as a percentage of mean biomass, which allows comparison across equations. For the log-transformed models, predictions were back-transformed to the original scale by exponentiation (exp(predicted log-AGB)) and the metrics were calculated on the back-transformed residuals, so that the comparison with the linear models was fair while the variance-stabilizing benefit of the transformation was kept.
 
--   MAE (Mean Absolute Error): Average absolute deviation in kg
--   RMSE (Root Mean Square Error): Standard deviation of residuals in kg
--   Relative RMSE (%): RMSE as percentage of mean biomass, enabling cross-equation comparison
-
-For log-transformed models, predictions were back-transformed to the original scale using exponentiation (exp(predicted log-AGB)), and metrics were calculated on back-transformed residuals. This ensures fair comparison with linear models while preserving the variance-stabilizing benefits of log-transformation.
-
-Results (Table X) demonstrate dramatic improvement: log-transformation reduced relative RMSE from 45-60% to 0.3-17% across all equation types—representing 40-60 percentage point reductions in uncertainty. The species-specific log model achieved the lowest uncertainty (0.34%), while even generic pan-tropical equations improved substantially under log-transformation.
+The results (Table X) showed a large improvement, in that log-transformation reduced relative RMSE from 45-60 per cent to 0.3-17 per cent across all equation types, a reduction of 40-60 percentage points. The species-specific log model had the lowest uncertainty (0.34 per cent), and even the generic pan-tropical equations improved substantially.
 
 ```{r}
 #| comment: NA
@@ -1183,11 +1116,11 @@ transformation_comparison |>
 
 ```
 
-Results shown in two previous tables provides the necessary justification for designing the cross-validation workflow in the next section, where we implement log-transformed models and quantify the uncertainty reduction according to different bias corrections and hyper-parameter tuning.
+The two tables above justify the cross-validation workflow of the next section, in which log-transformed models are fitted and the uncertainty reduction is quantified under different bias corrections and hyperparameter settings.
 
 #### Age-Class Stratification Split {.unnumbered}
 
-Stratification by size class or age cohort involves a critical component in forest biomass modeling. This ensures proportional representation of diameter classes, which effectively prevents bias from the systematic under-sampling of large trees [@paul2017moisture; @duncansonAbovegroundWoodyBiomass2021, pp. 100].
+Stratification by size class or age cohort is an essential part of forest biomass modeling, because it keeps every diameter class in proportion and so prevents the bias that comes from under-sampling large trees [@paul2017moisture; @duncansonAbovegroundWoodyBiomass2021, pp. 100].
 
 ```{r}
 #| comment: NA
@@ -1265,34 +1198,24 @@ split_verification |>
   flextable::italic(part = "footer")
 ```
 
-*Table X: Calibration and Validation SubSet Proportionality Check*
+*Table X. Calibration and validation subset proportionality check*
 
-The above example showcases a successful outcome, where all size classes show \<3% difference between calibration and validation sets, confirming successful stratification. This prevents over-representation of small trees and under-representation of large trees in model training.
+Every size class differed by less than 3 per cent between the calibration and validation sets, which confirms that the stratification worked and that neither small trees nor large trees are over- or under-represented in model training.
 
 ## 1.4 Cross-Validation
 
-Cross-validation quantifies out-of-sample prediction error, preventing over-fitting and providing realistic uncertainty estimates for REDD+ carbon credit deductions. We employ Monte Carlo Leave-Group-Out Cross-Validation (LGOCV) training regime using the `caret` library to demonstrate the following:
+Cross-validation quantifies out-of-sample prediction error, which guards against over-fitting and gives a realistic uncertainty estimate for the REDD+ carbon credit deduction. Monte Carlo leave-group-out cross-validation (LGOCV) in the `caret` library is used to test model performance on unseen data, to calculate a robust RMSE, to select the best-performing equation type and to show compliance with ART-TREES and VCS requirements.
 
--   Assess generalization: Test model performance on unseen data
--   Quantify uncertainty: Calculate robust RMSE estimates
--   Compare models: Select best-performing equation type
--   Meet MRV standards: Demonstrate compliance with ART-TREES/VCS requirements
+#### Simulation Design
 
-#### Monte Carlo Simulation Design:
+A 100-iteration Monte Carlo cross-validation was run to quantify out-of-sample prediction error and prevent over-fitting. Each iteration
 
-We implemented 100-iteration Monte Carlo cross-validation to quantify out-of-sample prediction error and prevent over-fitting. Each iteration:
+1.  split the data at random into 80 per cent calibration and 20 per cent validation, stratified by DBH class
+2.  fitted the model on the calibration data
+3.  predicted the validation data
+4.  calculated the performance metrics (MAE, RMSE, R²)
 
--   Randomly splits data into 80% calibration / 20% validation (stratified by DBH class)
--   Fits the model on calibration data
--   Predicts validation data
--   Calculates performance metrics (MAE, RMSE, R²)
-
-This process was repeated for all 10 model configurations:
-
--   5 allometric equations (Species-specific, Genus, Chave 2014, Brown 1997, Chave 2005)
--   2 transformations each (Linear, Log-transformed)
-
-Across 100 iterations, we accumulated validation predictions per model, providing robust uncertainty estimates that reflect true generalization performance rather than training-set over-fitting. The Monte Carlo approach is particularly valuable for small datasets (n=84), where a single train-test split might yield unrepresentative results due to sampling variance.
+The process was repeated for all 10 model configurations, the 5 allometric equations (species-specific, genus, Chave 2014, Brown 1997, Chave 2005) each under 2 transformations (linear and log-transformed). Across the 100 iterations the validation predictions of each model were accumulated, giving an uncertainty estimate that reflects true generalization rather than fit to the training set. The Monte Carlo approach is most valuable for a small dataset (n=84), where a single train-test split can give an unrepresentative result through sampling variance.
 
 ```{r}
 #| warning: false
@@ -1402,16 +1325,9 @@ log_chave2005_mc <- caret::train(
 
 ### Uncertainty Calculation
 
-We evaluate models using metrics aligned with REDD+ MRV requirements:
+Models are evaluated on metrics matched to REDD+ MRV requirements, the RMSE, the primary uncertainty metric for ART-TREES deductions; the relative RMSE, the RMSE as a percentage of the mean, which allows comparison across equations; the MAE, a robust alternative less sensitive to outliers; R², the proportion of variance explained; the Shapiro-Wilk p-value, a test of residual normality that checks the OLS assumption; and the deduction, the carbon credit deduction rate under ART-TREES Equation 11.
 
--   RMSE (Root Mean Square Error): Primary uncertainty metric for ART-TREES deductions
--   Relative RMSE (%): RMSE as percentage of mean, enabling cross-equation comparison
--   MAE (Mean Absolute Error): Robust alternative less sensitive to outliers
--   R² (Coefficient of Determination): Proportion of variance explained
--   Shapiro-Wilk p-value: Tests residual normality (OLS assumption verification)
--   Deduction (%): Carbon credit deduction rate per ART-TREES Equation 11
-
-For log-transformed models, all metrics were calculated on back-transformed predictions to ensure fair comparison with linear models. Back-transformation applies exp() to log-scale predictions, restoring values to the original kg scale while preserving the variance structure stabilized by log-transformation.
+For the log-transformed models, every metric was calculated on back-transformed predictions, so that the comparison with the linear models was fair. Back-transformation applies exp() to the log-scale predictions and restores them to kg while keeping the variance structure that the log-transformation stabilized.
 
 ```{r}
 #| warning: false
@@ -1532,13 +1448,11 @@ mc_performance |>
   flextable::italic(part = "footer")
 ```
 
-*Table 1.X: Monte Carlo LGOCV results demonstrate superiority of log-transformed models. Species-specific log model achieves lowest uncertainty RMSE = 15.2%, deduction = 4.8%), while linear models exceed 60% uncertainty, risking a deduction of \>20%.*
+*Table 1.X. Monte Carlo LGOCV results show the superiority of the log-transformed models. The species-specific log model has the lowest uncertainty (RMSE = 15.2%, deduction = 4.8%), while the linear models exceed 60% uncertainty and risk a deduction of \>20%.*
 
 ### Uncertainty Evaluation
 
-We ranked the five log-transformed models by relative RMSE (%), showing their performance hierarchy and financial implications for a hypothetical 1M tCO₂e REDD+ project at \$5/tonne carbon price:
-
-The ranking reveals that genus-level and Brown 1997 models achieved perfect fits (RMSE = 0.00%, R² = 1.000), which likely indicates over-fitting given the small sample size. The species-specific model provides a more realistic uncertainty estimate (0.35% RMSE, \$11k deduction), while pan-tropical equations show higher but acceptable uncertainty (11-17% RMSE, \$350-541k deductions).
+The five log-transformed models were ranked by relative RMSE to show their order of performance and the financial consequence for a hypothetical 1M tCO₂e REDD+ project at a \$5/tonne carbon price. The genus-level and Brown 1997 models fitted perfectly (RMSE = 0.00 per cent, R² = 1.000), which most likely indicates over-fitting given the small sample. The species-specific model gave a more realistic uncertainty (0.35 per cent RMSE, \$11k deduction), and the pan-tropical equations gave higher but acceptable uncertainty (11-17 per cent RMSE, \$350-541k deductions).
 
 ```{r}
 #| message: false
@@ -1594,17 +1508,13 @@ log_models_ranked |>
 
 ### Uncertainty Deductions
 
-Following ART-TREES Equation 11, we calculated the carbon credit deduction for the best-performing model (genus-level log-transformed). The deduction formula converts relative RMSE into a half-width 90% confidence interval, then applies the UA (uncertainty adjustment) factor: $$
+Following ART-TREES Equation 11, the carbon credit deduction was calculated for the best-performing model, the genus-level log-transformed model. The formula converts the relative RMSE into the half-width of a 90 per cent confidence interval and then applies the uncertainty adjustment factor, UA, as $$
 UA_t = 0.524417 \times \frac{HW_{90\%}}{1.645006}
 $$
 
-Where:
+where the half-width of the 90 per cent confidence interval is the RMSE in per cent divided by 100, the constant 1.645006 is the z-score for 90 per cent confidence, and the constant 0.524417 converts the half-width to the ART-TREES deduction rate.
 
--   Half-width 90% CI = RMSE (%) / 100
--   The constant 1.645006 is the z-score for 90% confidence
--   The constant 0.524417 converts to ART-TREES deduction rate
-
-For a hypothetical 1M tCO₂e project at \$5/tonne, the calculation proceeds as shown in the output below. Note that the genus-level model's 0.00% RMSE yields zero deduction, which highlights the over-fitting concern mentioned previously. In practice, species-specific or validated generic equations would be more appropriate for MRV reporting. We demonstrate the ART-TREES uncertainty deduction calculationin following section 1.6.
+For a hypothetical 1M tCO₂e project at \$5/tonne, the calculation proceeds as shown in the output below. The genus-level model's 0.00 per cent RMSE gives a zero deduction, which again points to over-fitting, and in practice a species-specific or validated generic equation would be more appropriate for MRV reporting. The ART-TREES deduction calculation is repeated in section 1.6.
 
 ```{r}
 #| message: false
@@ -1651,22 +1561,12 @@ cat(sprintf("  Net credited value: $%s\n",
 ::: callout-important
 ## Financial Impact
 
-Selecting species-specific over generic equation:
-
--   RMSE improvement: 18.9% =\> 15.2% (3.7 percentage points)
--   Deduction reduction: 6.0% =\> 4.8% (1.2 percentage points)
--   Revenue protected: \~\$12,000 per million tCO₂e // \$5/tonne
-
-Over a 30-year REDD+ project crediting period with 100,000 tCO₂e/year:
-
--   Total protected revenue: \~\$360,000
--   Additional cost: \~\$15-30k for species-specific equation development
--   Return on investment: 12-24x
+Choosing the species-specific equation over the generic one improves RMSE from 18.9 per cent to 15.2 per cent (3.7 percentage points), reduces the deduction from 6.0 per cent to 4.8 per cent (1.2 percentage points) and protects about \$12,000 of revenue per million tCO₂e at \$5/tonne. Over a 30-year REDD+ crediting period at 100,000 tCO₂e per year, the protected revenue is about \$360,000 against an additional cost of about \$15-30k for developing the species-specific equation, a return on investment of 12-24 times.
 :::
 
 ## 1.6 Reproducible Workflow[^index-3] {.unnumbered}
 
-This section contains all executable code referenced throughout Chapter 1, organized sequentially to match the conceptual flow of Sections 1.2-1.5. Please note that the entire training and its four chapters markdown can be downloaded as completed scripts from the project’s code repository here and live eBook here.
+This section holds all the code referenced in Chapter 1, in the order of Sections 1.2-1.5. The markdown for the whole training and its four chapters can be downloaded as complete scripts from the project's code repository here and the live eBook here.
 
 ```{r}
 #| message: false
@@ -2146,31 +2046,22 @@ Financial_Impact_1M = sprintf("$%.0fk", Credit_Deduction_pct * 10000 / 100)) |>
 dplyr::select(Rank, Equation, Rel_RMSE_pct, R2, Credit_Deduction_pct, Financial_Impact_1M)
 ```
 
-## 
-
-1.7 Chapter Summary
+## 1.7 Chapter Summary
 
 ### Key Findings
 
--   Distribution: Data exhibits right-skew (p \< 0.001) across equations, violating parametric assumptions
--   Heteroscedasticity confirmed: Breusch-Pagan test (p \< 0.001) shows variance increasing with tree size
--   Transformation: Log-transformation reduces uncertainty RMSE \>50 percentage points
--   Equation performance:
-    -   Species-specific (log): 15.2% RMSE, 4.8% deduction
-    -   Genus-level (log): 16.3% RMSE, 5.2% deduction
-    -   Pan-tropical (log): 17-19% RMSE, 5.4-6.0% deduction
--   Cross-Validation: 100-iteration Monte Carlo LGOCV confirms log-transformed models outperform across equations.
+The data were right-skewed (p \< 0.001) under every equation, violating the parametric assumptions, and the Breusch-Pagan test (p \< 0.001) confirmed that variance increased with tree size. Log-transformation reduced the RMSE by more than 50 percentage points. Among the log-transformed models, the species-specific equation gave 15.2 per cent RMSE and a 4.8 per cent deduction, the genus-level equation 16.3 per cent RMSE and a 5.2 per cent deduction, and the pan-tropical equations 17-19 per cent RMSE and 5.4-6.0 per cent deductions. The 100-iteration Monte Carlo LGOCV confirmed that the log-transformed models outperformed the linear models for every equation.
 
 ### REDD+ Best Practices
 
-To achieve commercially viable uncertainty levels (\<20% RMSE) and minimize carbon credit deductions:
+To reach a commercially viable uncertainty (below 20 per cent RMSE) and minimize carbon credit deductions, six practices apply.
 
-1.  Log-transformation (CRITICAL): Achieves 90-95% of possible uncertainty reduction at zero marginal cost
-2.  Species-specific: Reduces RMSE by 3-4 percentage points vs. genus-level, protecting \$10-15k per million tCO₂e
-3.  Stratified: Ensures proportional representation across DBH classes, preventing bias from undersampling large trees
-4.  Cross-Validation: Quantifies out-of-sample error, avoiding overfitting and providing defensible uncertainty estimates
-5.  Sample Size: Minimum n≥50 trees per equation (Roxburgh et al. 2015), with stratification across ln(DBH) range
-6.  Measurement precision: Target ±0.5 cm DBH error through calibrated instruments and trained field crews
+1.  Log-transformation, which is essential and achieves 90-95 per cent of the possible uncertainty reduction at zero marginal cost
+2.  Species-specific equations, which reduce RMSE by 3-4 percentage points against genus-level equations and protect \$10-15k per million tCO₂e
+3.  Stratified splitting, which keeps every DBH class in proportion and prevents bias from under-sampling large trees
+4.  Cross-validation, which quantifies out-of-sample error, avoids over-fitting and gives a defensible uncertainty estimate
+5.  A sample size of at least n≥50 trees per equation (Roxburgh et al. 2015), stratified across the ln(DBH) range
+6.  Measurement precision of ±0.5 cm DBH error, through calibrated instruments and trained field crews
 
 ### Investment Priorities
 
@@ -2182,31 +2073,31 @@ To achieve commercially viable uncertainty levels (\<20% RMSE) and minimize carb
 | Improved DBH measurement | \$2-5k | 1-2 pp | \$4-8k |
 | Destructive sampling | \$50-100k | 5-10 pp | \$20-40k |
 
-: *\*Assumes 1M tCO₂e project \@ \$5/tonne; pp = percentage points*
+: *\*Assumes 1M tCO₂e project at \$5/tonne; pp = percentage points*
 
-Strategic recommendation: Log-transformation delivers the largest uncertainty reduction at zero cost. Master this technique before investing in field campaigns or destructive sampling.
+Log-transformation gives the largest uncertainty reduction at zero cost, and it should be mastered before any investment in field campaigns or destructive sampling.
 
 ### Documentation Requirements
 
-For REDD+ MRV reporting under ART-TREES/VCS, include:
+REDD+ MRV reporting under ART-TREES and VCS should include the following.
 
--   Equation: Document geographic and taxonomic specificity, DBH range and sample size
--   Transformation: Demonstrate non-normality (Shapiro-Wilk), heteroscedasticity (Breusch-Pagan), RMSE reduction
--   Cross-Validation: Report RMSE, relative RMSE, R², Shapiro-Wilk on residuals from Monte Carlo LGOCV
--   Uncertainty: Show ART Equation 11 application with half-width 90% CI derivation
--   Stratification: Confirm proportional representation across DBH classes in calibration/validation splits
+-   The equation, with its geographic and taxonomic specificity, DBH range and sample size
+-   The transformation, with evidence of non-normality (Shapiro-Wilk), heteroscedasticity (Breusch-Pagan) and the RMSE reduction
+-   The cross-validation, reporting RMSE, relative RMSE, R² and Shapiro-Wilk on the residuals from Monte Carlo LGOCV
+-   The uncertainty, showing the application of ART Equation 11 with the derivation of the half-width 90 per cent confidence interval
+-   The stratification, confirming proportional representation across DBH classes in the calibration and validation splits
 
 ### Next Steps
 
-Chapter 2: Emission Factors will address:
+Chapter 2, Emission Factors, will cover
 
--   IPCC default uncertainties (CH₄: ±30-40%, N₂O: ±50-60%)
--   Combustion completeness and fire intensity effects
--   Gas-specific emission ratios (CO₂, CH₄, N₂O)
--   Field measurement protocols (FTIR, eddy covariance)
+-   IPCC default uncertainties (CH₄ ±30-40 per cent, N₂O ±50-60 per cent)
+-   combustion completeness and the effect of fire intensity
+-   gas-specific emission ratios (CO₂, CH₄, N₂O)
+-   field measurement protocols (FTIR, eddy covariance)
 
-[^index-1]: Removal of `python` workflow was requested during first review (November 24, 2025). For python users, these chunks have been rendered "hidden" and can be accessed when clone the repository from the markdown files used to compile each chapter.
+[^index-1]: Removal of the `python` workflow was requested at the first review (November 24, 2025). For python users, these chunks are hidden in the rendered book and can be read in the markdown files used to compile each chapter after cloning the repository.
 
-[^index-2]: Follow-up: Allometry Sample Size Guidelines [@roxburgh2015guidelines] = [Link](https://esajournals.onlinelibrary.wiley.com/doi/full/10.1890/ES14-00251.1#sa2).
+[^index-2]: Sample size guidelines for allometry [@roxburgh2015guidelines] are at this [Link](https://esajournals.onlinelibrary.wiley.com/doi/full/10.1890/ES14-00251.1#sa2).
 
-[^index-3]: Parallel development of Python cells was paused to concentrate efforts on delivering a completed R workflow. However, initial python code was preserved in each chapter’s markdown file and can be rendered from cloning the repository and adjusting \`echo\` function to reveal and run python operations and compare computation
+[^index-3]: Parallel development of the Python cells was paused so that a complete R workflow could be delivered first. The initial python code is kept in each chapter's markdown file and can be rendered by cloning the repository and changing the \`echo\` option to reveal and run the python operations for comparison.

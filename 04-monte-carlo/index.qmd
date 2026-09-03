@@ -25,15 +25,15 @@ csl: ../references/apa.csl
 
 ## Overview {.unnumbered}
 
-Monte Carlo simulation aggregates uncertainties from activity data (Chapter 3), emission factors (Chapter 2), and allometric equations (Chapter 1) into a single conservativeness deduction for ART-TREES credit issuance. This chapter demonstrates compliant simulation design, presents worked examples achieving 20-50% uncertainty reductions through strategic optimization, and provides decision frameworks for maximizing credit revenue under Section 8 requirements.
+Monte Carlo simulation combines the uncertainties in activity data (Chapter 3), emission factors (Chapter 2) and allometric equations (Chapter 1) into a single conservativeness deduction, the share of emission reductions withheld from credit issuance under ART-TREES. This chapter sets out a simulation design that meets the standard, presents worked examples in which uncertainty fell by 20 to 50 per cent through targeted improvement, and gives the reasoning for choosing where to invest under the Section 8 requirements.
 
-ART-TREES Section 8 mandates Monte Carlo Approach 2 with minimum 10,000 iterations, 90% confidence intervals, and bootstrap sampling for unknown probability distributions [@artREDDEnvironmentalExcellence2021]. The simulation calculates the Uncertainty Adjustment Factor (UAF) from the half-width of emission distribution confidence intervals:
+ART-TREES Section 8 requires Monte Carlo Approach 2 with at least 10,000 iterations, 90 per cent confidence intervals, and bootstrap sampling where the probability distribution of an input is unknown [@artREDDEnvironmentalExcellence2021]. The simulation calculates the uncertainty adjustment factor (UAF) from the half-width of the confidence interval around simulated emissions.
 
 $$
 UA_t = 0.524417 \times \frac{HW_{90\%}}{1.645006}
 $$
 
-Where $HW_{90\%}$ represents the half-width of the 90% confidence interval around mean emissions. This UAF then determines the conservativeness deduction applied to creditable emissions.
+Here $HW_{90\%}$ is the half-width of the 90 per cent confidence interval around mean emissions, and the resulting UAF sets the conservativeness deduction applied to creditable emissions.
 
 ### Environment Setup {.unnumbered}
 
@@ -96,9 +96,9 @@ knitr::opts_chunk$set(
 
 ## 4.1 Simulation Design
 
-Temporal Dimensions
+### Temporal Dimensions
 
-ART-TREES permits single-year or multi-year aggregation. Program participants may recognize that single-year simulations tend to reduce uncertainty by avoiding temporal error propagation. We discuss below some of the advantages and disadvantages in applying similar adjustments and aggregations to Monte Carlo simulated estimates.
+ART-TREES permits simulation over a single year or aggregation over several years, and single-year simulation tends to give lower uncertainty because errors do not accumulate across years. The advantages and disadvantages of each design are set out in section 4.3, and the single-year function below is the recommended form.
 
 ```{r}
 #| eval: true
@@ -148,11 +148,13 @@ cat(sprintf("Uncertainty Adjustment Factor: %.3f\n", results$uaf))
 
 ### Baseline Treatment
 
-Use the arithmetic mean of verified historical emissions as deterministic baseline, avoiding stochastic variance. For example, country X computed their HFLDCL as 21,037,534 tCO₂ rather than simulating historical variability [@artREDDEnvironmentalExcellence2021, Section 8.4].
+The baseline is the arithmetic mean of verified historical emissions, treated as a fixed value rather than a simulated one, so that it adds no variance of its own. Country X, for example, set its high forest low deforestation crediting level (HFLDCL) at 21,037,534 tCO₂ rather than simulating the variation between historical years [@artREDDEnvironmentalExcellence2021, Section 8.4].
 
-## 4.2 Uncertainty Source Prioritization
+## 4.2 Ranking Uncertainty Sources
 
 ### Sensitivity Analysis
+
+The sensitivity analysis below halves the activity data uncertainty, the emission factor uncertainty, and both together, and reports the UAF under each scenario so that the dominant source can be identified.
 
 ```{r}
 #| eval: true
@@ -186,13 +188,13 @@ sensitivity_results <- sensitivity_analysis(year_2024)
 print(sensitivity_results)
 ```
 
-For jurisdictions where emission factor uncertainty dominates (typical in Tier 1 approaches), investments in plot-based Tier 2 emission factors yield greater UAF reductions than marginal improvements in classification accuracy.
+Where emission factor uncertainty dominates, as it usually does under Tier 1 defaults, investment in plot-based Tier 2 emission factors lowers the UAF by more than a small gain in classification accuracy would.
 
-## 4.3 Optimization Strategies
+## 4.3 Reducing Uncertainty
 
 ### Bootstrap Sampling
 
-When probability distributions are unknown, ART-TREES requires bootstrap resampling. Efficient implementation draws samples from empirical error distributions:
+Where the probability distribution of an input is unknown, ART-TREES requires bootstrap resampling, which draws repeated samples from the observed errors instead of from an assumed distribution. The function below draws the true forest area from a binomial distribution set by the user's accuracy of the map.
 
 ```{r}
 #| eval: true
@@ -215,11 +217,11 @@ bootstrap_activity_data <- function(n_sim, confusion_matrix, mapped_area_ha) {
 
 ### Temporal Aggregation
 
-#### Single-Year vs. Multi-Year Simulation Design
+#### Design Comparison
 
-ART-TREES permits two approaches to temporal scope in Monte Carlo simulations. Recent validation work demonstrates that single-year simulation design substantially reduces uncertainty compared to multi-year aggregation approaches.
+ART-TREES permits two temporal scopes for the simulation, a single monitoring year or the whole crediting period aggregated, and recent validation work in a jurisdictional program found that the single-year design gives substantially lower uncertainty than multi-year aggregation.
 
-#### Multi-Year Aggregation:
+#### Multi-Year Aggregation
 
 ```{r}
 #| eval: false
@@ -247,11 +249,11 @@ multi_year_simulation <- function(n_sim = 10000, years_data) {
 }
 ```
 
-Note some important limitations to this. Error propagation across years inflates confidence interval width, which depending data dimensions, can produce UA \> 100% uncertainty as it exceeds mean emissions earlier in the trend.
+This design has a serious limitation, in that errors accumulate across years and widen the confidence interval, so that the half-width can exceed mean emissions in the early years of the trend and give a UA above 100 per cent.
 
-#### Single-Year Design:
+#### Single-Year Design
 
-On the other hand, the single-year approach constrains simulation to single monitoring period:
+The single-year design limits the simulation to one monitoring period, so that only that year's errors enter the interval.
 
 ```{r}
 #| eval: true
@@ -298,11 +300,11 @@ cat(sprintf("90%% CI Half-Width: %.1f%%\n", results$hw_90_pct))
 cat(sprintf("Uncertainty Adjustment Factor: %.1f%%\n", results$uaf * 100))
 ```
 
-Validated performance: Jurisdictional program testing achieved 21-percentage-point reduction (from 104% to 83% UAF) by switching from multi-year to single-year design.
+In jurisdictional program testing, switching from the multi-year to the single-year design cut the UAF by 21 percentage points, from 104 per cent to 83 per cent.
 
 #### Reference Level Treatment
 
-Treat the HFLDCL baseline as deterministic or fixed verified value rather than stochastic and persistently in effect:
+The HFLDCL baseline is treated as a fixed, verified value rather than a simulated one, and it stays in effect for the crediting period.
 
 ```{r}
 #| eval: true
@@ -325,23 +327,23 @@ uaf <- 0.524417 * (hw_90 / mean(reductions_tco2)) / 1.645006
 cat(sprintf("\nDeterministic Baseline UAF: %.1f%%\n", uaf * 100))
 ```
 
-One can assume the historical mean or a reference level that has been VVB-verified. By ART's definition, audit statements are irreversible and issues are non-fungible, which therefore adds removes compliance concerns value and helps avoid artificially inflating UAF with repeat revisions.
+Either the historical mean or a reference level verified by the validation and verification body (VVB) may serve as the fixed value. Under ART's definitions an audit statement is irreversible and an issuance is not fungible, so a verified reference level removes a compliance concern and avoids inflating the UAF through repeated revision.
 
 #### Credit Recovery Provision
 
-Recalculate every 5 years to recover over-deducted credits:
+Every 5 years the deduction is recalculated so that credits withheld in excess can be recovered.
 
 $$
 \text{Recovered Credits}_t = \sum_{i=1}^{5} (UA_{i,annual} - UA_{cumulative}) \times \text{Emissions}_i
 $$
 
-This incentivizes continuous methodological improvement.
+The provision rewards continued improvement in method, because each reduction in annual uncertainty returns credits already deducted.
 
-## 4.4 Worked Example: Jurisdictional Program
+## 4.4 Worked Example
 
 ### Multi-Source Integration
 
-Combine uncertainties from all three chapters into crediting period simulation:
+The worked example below is a jurisdictional program simulation that combines the uncertainties from all three earlier chapters into one crediting period.
 
 ```{r}
 #| eval: true
@@ -399,13 +401,13 @@ cat(sprintf("Creditable Emissions: %.0f tCO2\n", program_results$creditable_tco2
 
 ## 4.5 Compliance Checklist
 
--   Minimum 10,000 iterations per crediting year
--   90% confidence intervals (5th and 95th percentiles)
+-   At least 10,000 iterations per crediting year
+-   90 per cent confidence intervals from the 5th and 95th percentiles
 -   Bootstrap sampling for unknown distributions
--   Conservative bias (systematic underestimation permitted)
--   Whole-chain integration (activity data + emission factors)
+-   Conservative bias, with systematic underestimation permitted
+-   Whole-chain integration of activity data and emission factors
 -   Documentation of simulation code and random seed
 
 ## 4.6 Chapter Summary
 
-Monte Carlo simulation aggregates component uncertainties into conservativeness deductions determining credit issuance. Strategic optimization prioritizes dominant sources, such as emission factors in Tier 1 programs or activity data in high-resolution systems. Single-year simulation, deterministic reference levels, and systematic improvements achieve attractive uncertainty reductions, directly increasing revenue and while meeting ART-TREES Section 8 requirements.
+Monte Carlo simulation combines the component uncertainties into the conservativeness deduction that sets credit issuance, and effort is best spent on the dominant source, which is the emission factor in a Tier 1 program and the activity data in a system built on high-resolution imagery. Single-year simulation, a fixed reference level and steady improvement of each input lower the deduction, raise revenue and meet the ART-TREES Section 8 requirements.

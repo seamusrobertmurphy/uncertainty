@@ -33,6 +33,7 @@ book:
     - 04-monte-carlo/index.qmd
   
   appendices:
+    - AA-Appendix/primers.qmd
     - references/index.qmd
     - AA-Appendix/glossary-terms.qmd
     - AA-Appendix/additional-reading.qmd

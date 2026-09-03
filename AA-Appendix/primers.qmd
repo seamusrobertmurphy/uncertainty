@@ -1,0 +1,54 @@
+## Uncertainty Primers
+
+Two primers give the statistical grounding the four chapters rely on. The first covers the measures of sampling and prediction uncertainty, and the second the Monte Carlo method that the ART-TREES Standard requires for propagating them.
+
+### Uncertainty Statistics
+
+Forest carbon inventory infers the true value for a whole population from a limited sample of observations, and because a forest is complex and no measuring tool or sample is perfect, the sample mean differs from the true mean. A sample of 50 field plots across a million-hectare jurisdiction gives an average that is expected to differ from the average of the whole forest, and uncertainty is the degree of doubt that the measured average lies close to the true one.
+
+The difference between the sampled average and the assumed true population average[^primers-1] is what the measures of statistical uncertainty describe, and two of them describe this dispersion in different ways. Standard deviation (`DescTools::SD()`)[^primers-2] measures the spread of the observed points around the sample mean, and is a property of the field sample itself, describing how far the observations lie from one another and from their mean. Standard error (`DescTools::MeanSE()`) measures how far the sample mean is expected to lie from the true population value, so it describes the precision of the sample as an estimate of that value. Written as $\text{se} = \frac{\sigma}{\sqrt{n}}$, it falls as the sample size grows.
+
+The distinction matters because standard deviation quantifies the variability of the data while standard error quantifies the precision of the estimate. Under the ART-TREES Standard (V2.0), the 90 per cent confidence interval uses a z-value of 1.645, meaning that the true mean lies within ±1.645 standard errors of the sample mean with 90 per cent confidence.
+
+Root mean squared error (`DescTools::RMSE()`; @forecasting1978crystal) measures a different kind of uncertainty, prediction accuracy rather than sampling precision. Standard error falls as the sample grows, whereas RMSE measures the performance of a model and stays constant unless the model itself improves.
+
+$$
+RMSE = \sqrt{\frac{1}{n} \sum_{i=1}^{n} (\text{ref}_i - x_i)^2}
+$$
+
+In forest carbon accounting, RMSE quantifies how far model predictions deviate from observed reference values, and it is used for allometric equations, for remote sensing models that predict forest attributes, and for the accuracy assessment of land cover classifications. ART-TREES v2.0 exempts allometric uncertainty from mandatory reporting, but RMSE values still inform emission factor uncertainty and sampling design.
+
+### Monte Carlo Methods
+
+Monte Carlo simulation traces its roots to the Markov chain, developed by Andrey Markov in the early 1900s [@sheynin1989aa]. At the time, Markov was in a public dispute with Pavel Nekrasov, who claimed that statistical laws required independent events and argued that this supported divine free will. To disprove this, Markov analyzed the first 20,000 letters of a poem by Pushkin and found 8,638 vowels and 11,362 consonants. He showed that the probability of the next letter depends on the current letter, in that vowels tend to follow consonants and consonants vowels, yet across thousands of letter sequences the system still converged to a stable distribution of 43 per cent vowels and 57 per cent consonants, which proved that statistical predictability holds even under strong causal dependence.
+
+The technique stayed theoretical until 1948, when Nicholas Metropolis, John von Neumann and Stanislaw Ulam at Los Alamos developed the Monte Carlo method and named it after the fondness of Ulam's uncle for the roulette casinos of Monte Carlo [@metropolis1949monte]. Metropolis rewired the ENIAC computer to run the first Monte Carlo simulations of nuclear core criticality, and the group found that sampling configurations by their probability and weighting globally, rather than generating random configurations and weighting each by its Boltzmann factor, cut the computational cost dramatically.
+
+Part of its success in nuclear science lay in its distinction between one-sided and two-sided error distributions, which allowed simulation algorithms with a deliberate bias to be designed, because the study of nuclear reactivity needed such biased measures to estimate more definitely the critical level of neutron activity for a chain reaction. The Monte Carlo method therefore emerged from the statistics of critical systems, in which different rules of dependency are assumed. Critical systems are self-organizing populations that sit between steady-state thresholds and unpredictable tipping points, as in mega-fires, beetle outbreaks and disease epidemics [@sornette2006critical], where the assumption of causal dependence prevails. The same approaches play a growing role in the spatial and temporal modelling of plant ecology and the remote sensing of forest ecosystems [@schrodt2025advancing].
+
+In practice the Monte Carlo method rests on three mathematical principles.
+
+1.  Pseudo-random Number Generation
+2.  Markov-Rule of Memory-less Dependence
+3.  Law of Large Numbers and Convergence
+
+Monte Carlo simulations use pseudo-random number generators (`PRNG`'s), which produce deterministic sequences that appear random. Their mathematical foundation mirrors the distribution of prime numbers, local unpredictability combined with global statistical regularity. Four kinds of randomization algorithm meet the requirements of Monte Carlo simulation, and compliance can be verified with primality tests published as coded scripts [@solovay1977fast; @baillie1980lucas; @murray2003schreier].
+
+Under the Markov property of memoryless dependence the system "remembers" only the immediately previous state, which bounds resampling in time so that each year's carbon stock projection requires only the current year's state rather than 30 years of history, and this cuts the computational load dramatically.
+
+$$
+P(X_{t+1} | X_t, X_{t-1}, ...) = P(X_{t+1} | X_t)
+$$
+
+Under the law of large numbers, sample statistics converge to population parameters as iterations increase, and standard error falls by $\sqrt{m}$ when the number of samples rises by a factor $m$. This is the basis of the ART requirement for a minimum of 10,000 iterations.
+
+::: callout-important
+## Causal Dependence
+
+Causal dependence matters in forest carbon science because an ecosystem is not a series of independent coin flips but a dynamic system in which the state of the forest in Year ^*t+1*^ depends heavily on its state in Year ^*t*^.
+
+Markovian principles model the transitions of such a system, which is essential for understanding disturbance regimes such as wildfire and pest outbreaks and the potential for ecological tipping points, because the probability that a forest passes into a degraded state this year depends on its current health, not its health 50 years ago. By building in these dependent, causal relationships, Monte Carlo models simulate the path-dependent uncertainty of carbon stocks over time more realistically than treating every source of uncertainty as an independent random variable.
+:::
+
+[^primers-1]: Parametric statistics rests on the calculation of mean estimates for large populations, and on the empirical assumption that a true population, once enough of it is sampled, converges to a distribution with the shape of a bell curve.
+[^primers-2]: The `package::function()` notation, such as `DescTools::SD()`, identifies which package each function belongs to, so that readers can verify package installations and resolve naming conflicts.

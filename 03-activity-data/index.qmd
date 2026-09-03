@@ -22,29 +22,120 @@ csl: ../references/apa.csl
 
 ## Overview {.unnumbered}
 
-Activity data (AD) represents the spatial extent and temporal dynamics of land-use change in REDD+ accounting. This chapter addresses uncertainty quantification in land cover classification, change detection, and spatial aggregation. These components typically constitute the greatest contribution to total REDD+ uncertainty [@ballantyne2015audit].
+Activity data (AD) is the area and timing of land use change in REDD+ accounting. This chapter covers the quantification of uncertainty in land cover classification, change detection and spatial aggregation, which together usually make the largest contribution to total REDD+ uncertainty [@ballantyne2015audit].
 
-### A Data Cube Framework for Uncertainty Reduction
+### Data Cube Framework
 
-Satellite-based activity data classification faces three fundamental sources of uncertainty: spatial misalignment between sensor bands, temporal gaps from cloud contamination, and spectral inconsistency from varying atmospheric conditions. Traditional scene-based processing handles individual images independently and fails to address these uncertainties systematically. This introduces geometric discontinuities at tile boundaries and creates systematic bias when deforestation occurs during cloudy periods, propagating uncorrected atmospheric effects into phenological signatures.
+Classification of activity data from satellite imagery faces three main sources of uncertainty, which are spatial misalignment between sensor bands, gaps in time where cloud hides the ground, and inconsistent spectral values from changing atmospheric conditions. Scene based processing treats each image on its own and handles none of these sources systematically, so it leaves geometric breaks at tile edges, biases the record when deforestation happens during cloudy periods, and passes uncorrected atmospheric effects into the seasonal signatures used for classification.
 
-### Time Series Diminesions
+### Time Series Dimensions
 
-Data cubes provide a structured solution by organizing satellite imagery into multidimensional arrays with consistent spatial, temporal, and spectral dimensions. This architecture enables analysis-ready workflows that normalize heterogeneous acquisitions into regular spatiotemporal grids through three coupled preprocessing operations:
+A data cube arranges satellite imagery as a multidimensional array with consistent spatial, temporal and spectral dimensions, so that acquisitions of differing geometry, timing and calibration are placed on one regular grid through three linked preprocessing steps. Spatial normalization reprojects every input to a common coordinate system with uniform pixel spacing, which reduces geometric uncertainty and addresses the 5 to 10 per cent classification error found at forest boundaries, where the precision of the boundary sets the area estimate. Temporal normalization ranks scenes by atmospheric quality to fill cloud gaps and interpolate missing observations, which prevents the 15 to 25 per cent systematic underestimate of forest loss recorded when clearing coincides with persistent cloud (Hansen et al., 2014). Spectral normalization applies consistent atmospheric corrections and sensor calibrations across the series so that temporal patterns reflect real seasonal change rather than processing artefacts, which otherwise inflate classification variance by 10 to 20 per cent.
 
--   Spatial Normalization: Reprojecting all inputs to common coordinate systems with uniform pixel spacing reduces geometric uncertainty. This typically addresses the 5-10% classification error found at forest boundaries where precise delineation determines area estimates.
--   Temporal Normalization: Compositing algorithms rank scenes by atmospheric quality to fill cloud gaps and interpolate missing observations. This prevents the 15-25% systematic underestimation of forest loss documented when clearing events coincide with persistent cloud cover (Hansen et al., 2014).
--   Spectral Normalization: Consistent atmospheric corrections and sensor calibrations across the time series ensure temporal patterns reflect genuine phenological dynamics. This prevents data processing artifacts from inflating classification variance by 10-20%.
+```{r}
+#| label: fig-datacube
+#| fig-cap: "Geometry of a satellite time series data cube. Each date on the time axis holds a stack of spectral band images (B02 blue, B03 green, B04 red, B08 near infrared) on one shared pixel grid (x, y), so every pixel carries a full spectral time series. Spatial normalisation keeps the grids aligned across dates, temporal normalisation fills the dates lost to cloud, and spectral normalisation keeps values comparable between planes, which is why the preprocessing in this chapter acts along each of these three dimensions (Author's illustration, 2026/09)."
+#| fig-width: 11
+#| fig-height: 5.2
+#| dpi: 150
+#| out-width: "100%"
+#| fig-align: center
+#| warning: false
+#| message: false
 
-![Geometric representation of a multidimensional time-series dataset of land use change analysis. The diagram illustrates the intersection of spatial (x,y,z) and temporal planes (t) using dimensional logic to highlight the signficance of data alignment and temporal sampling to preprocessing treatments and uncertainty reductions (Author’s illustration, 2026/01).](assets/images/png/datacube_static_clean.png){fig-align="center"}
+library(ggplot2)
 
-For REDD+ monitoring under IPCC Approach 3 requirements, data cube architecture provides the foundation for pixel-level uncertainty tracking essential for defensible carbon accounting. By organizing probability estimates and model residuals as additional cube attributes, analysts can map spatial patterns of uncertainty and implement adaptive validation strategies targeting high-uncertainty regions.
+# Oblique view of flat planes: x runs right, y runs back (up-right), z stacks bands vertically.
+ang <- 32 * pi / 180
+k   <- 0.62
+proj <- function(x, y, z = 0) data.frame(u = x + k * y * cos(ang), v = k * y * sin(ang) + z)
 
-This spatially explicit quantification directly supports ART-TREES Section 8 compliance by providing the pixel-level confidence estimates required for Monte Carlo emission simulations. This allows uncertainty deductions to be calculated from empirical probability distributions rather than conservative default assumptions. Empirical studies demonstrate that proper data cube preprocessing reduces total classification uncertainty by 40-60% compared to scene-based approaches. For a 1 million $tCO_2e$ REDD+ project, this represents \$200,000–\$300,000 in protected revenue at a \$5/tonne carbon price.
+dates  <- c("2022-01-05", "2022-01-21", "2022-02-06")
+bands  <- c(B08 = "#7b2cbf", B04 = "#d62828", B03 = "#2d8f3c", B02 = "#1d7fa8")  # bottom to top
+n_px   <- 6
+dz     <- 0.16          # vertical gap between band planes
+step   <- 2.4           # horizontal spacing between dates
+axis_v <- 1.75          # height of the time axis above the top plane
+
+# One fixed reflectance pattern shared by every band and date, so the reader sees
+# the same landscape in each plane. Values in [0, 1] shade each band's colour.
+set.seed(7)
+base <- outer(1:n_px, 1:n_px, function(i, j) 0.35 + 0.5 * ((i + j) %% 3 == 0)) +
+        matrix(runif(n_px * n_px, -0.15, 0.15), n_px)
+base <- pmin(pmax(base, 0.05), 1)
+
+cells <- list(); frames <- list(); fans <- list(); ticks <- list()
+for (d in seq_along(dates)) {
+  x_off <- (d - 1) * step
+  for (b in seq_along(bands)) {
+    z <- (b - 1) * dz
+    for (i in 1:n_px) for (j in 1:n_px) {
+      x0 <- x_off + (j - 1) / n_px; x1 <- x_off + j / n_px
+      y0 <- (i - 1) / n_px;          y1 <- i / n_px
+      p <- proj(c(x0, x1, x1, x0), c(y0, y0, y1, y1), z)
+      p$id <- paste(d, b, i, j); p$band <- names(bands)[b]; p$val <- base[i, j]
+      p$order <- b
+      cells[[length(cells) + 1]] <- p
+    }
+    f <- proj(c(x_off, x_off + 1, x_off + 1, x_off), c(0, 0, 1, 1), z)
+    f$id <- paste(d, b); f$order <- b
+    frames[[length(frames) + 1]] <- f
+  }
+  # Fan lines from the date tick to the four corners of the top plane
+  top_z <- (length(bands) - 1) * dz
+  apex  <- proj(x_off + 0.5, 0.5, top_z + axis_v)
+  corners <- proj(c(x_off, x_off + 1, x_off + 1, x_off), c(0, 0, 1, 1), top_z)
+  fans[[length(fans) + 1]] <- data.frame(u = apex$u, v = apex$v, uend = corners$u, vend = corners$v)
+  ticks[[length(ticks) + 1]] <- data.frame(u = apex$u, v = apex$v, date = dates[d])
+}
+cells  <- do.call(rbind, cells); frames <- do.call(rbind, frames)
+fans   <- do.call(rbind, fans);  ticks  <- do.call(rbind, ticks)
+
+# Fill colour: each band's hue, lightened by the cell value
+lighten <- function(col, f) { rgb_ <- col2rgb(col) / 255; rgb(rgb_[1] + (1 - rgb_[1]) * f,
+                                                             rgb_[2] + (1 - rgb_[2]) * f,
+                                                             rgb_[3] + (1 - rgb_[3]) * f) }
+cells$fill <- mapply(function(b, v) lighten(bands[[b]], 1 - v), cells$band, cells$val)
+
+# Time axis
+axis_y  <- ticks$v[1]
+axis_df <- data.frame(u = ticks$u[1] - 1.3, v = axis_y, uend = ticks$u[3] + 1.3, vend = axis_y)
+
+# Labels for the first stack
+top_z    <- (length(bands) - 1) * dz
+lab_x    <- proj(0.5, 1.2, top_z + 0.05)                  # along the back edge of the top plane
+lab_y    <- proj(-0.12, 0.5, top_z)                 # along the left edge of the top plane
+band_lab <- do.call(rbind, lapply(seq_along(bands), function(b) {
+  p <- proj(-0.08, 0, (b - 1) * dz); data.frame(u = p$u, v = p$v, lab = names(bands)[b]) }))
+
+p <- ggplot() +
+  geom_polygon(data = cells[order(cells$order), ], aes(u, v, group = id), fill = cells$fill[order(cells$order)],
+               colour = "white", linewidth = 0.15) +
+  geom_polygon(data = frames[order(frames$order), ], aes(u, v, group = id), fill = NA,
+               colour = "#222222", linewidth = 0.6) +
+  geom_segment(data = fans, aes(u, v, xend = uend, yend = vend), colour = "#444444", linewidth = 0.35) +
+  geom_segment(data = axis_df, aes(u, v, xend = uend, yend = vend), linewidth = 0.8,
+               arrow = arrow(length = unit(0.3, "cm"), type = "closed")) +
+  geom_point(data = ticks, aes(u, v), size = 2.2) +
+  geom_text(data = ticks, aes(u, v + 0.14, label = date), size = 4.6, vjust = 0) +
+  annotate("text", x = axis_df$uend - 0.05, y = axis_y + 0.14, label = "time", hjust = 1, vjust = 0, size = 4.6) +
+  annotate("text", x = lab_x$u, y = lab_x$v, label = "x", size = 4.4, fontface = "italic") +
+  annotate("text", x = lab_y$u, y = lab_y$v, label = "y", size = 4.4, fontface = "italic") +
+  geom_text(data = band_lab, aes(u - 0.02, v, label = lab), hjust = 1, size = 3.6, colour = "#333333") +
+  annotate("text", x = band_lab$u[1] - 0.42, y = mean(band_lab$v), label = "bands", angle = 90, size = 4.4) +
+  coord_equal(clip = "off") + theme_void() +
+  theme(plot.background = element_rect(fill = "white", colour = NA),
+        plot.margin = margin(10, 10, 10, 10))
+p
+```
+
+Under IPCC Approach 3, the data cube is the structure on which pixel level uncertainty is tracked for defensible carbon accounting. Storing class probabilities and model residuals as further attributes of the cube lets analysts map where uncertainty concentrates and direct validation sampling to the regions where it is highest.
+
+This spatially explicit record supports compliance with ART-TREES Section 8 because it supplies the pixel level confidence estimates that Monte Carlo emission simulations need, so that uncertainty deductions are calculated from empirical probability distributions rather than conservative default values. Empirical studies show that data cube preprocessing reduces total classification uncertainty by 40 to 60 per cent compared with scene based approaches, which for a REDD+ project of 1 million $tCO_2e$ protects \$200,000 to \$300,000 in revenue at a carbon price of \$5 per tonne.
 
 ### IPCC Approaches
 
-The IPCC defines three hierarchical approaches for activity data collection that differ in spatial explicitness and uncertainty characteristics [@ipccChapter2Generic2019]:
+The IPCC defines three approaches to collecting activity data, ordered by how spatially explicit they are and by their uncertainty [@ipccChapter2Generic2019].
 
 | Approach   | Data Type             | Spatial Resolution  | Uncertainty |
 |------------|-----------------------|---------------------|-------------|
@@ -52,17 +143,11 @@ The IPCC defines three hierarchical approaches for activity data collection that
 | Approach 2 | Sample-based matrices | Point/grid sampling | Moderate    |
 | Approach 3 | Wall-to-wall maps     | Spatially explicit  | Lowest      |
 
-This chapter implements Approach 3 methods using satellite time series classification within data cube frameworks, which ART-TREES programs predominantly adopt due to requirements for spatially explicit monitoring, pixel-level change detection, and integration with emission factor stratification. The data cube architecture and machine learning workflows demonstrated in Sections 3.2-3.9 operationalize Approach 3 while providing the uncertainty quantification infrastructure required under ART-TREES Section 8. Data cubes enable Approach 3's lower uncertainty bounds by ensuring consistent spatial alignment for wall-to-wall mapping, maintaining temporal continuity for change detection, and preserving spectral fidelity for accurate classification—benefits unattainable through aggregated statistics (Approach 1) or sample-based approaches (Approach 2) that inherently discard spatial context.
+This chapter applies Approach 3 through satellite time series classification within a data cube, the route most ART-TREES programs take because they must monitor spatially, detect change at the pixel and link the map to emission factor strata. The data cube and machine learning workflows in Sections 3.2-3.9 carry out Approach 3 and produce the uncertainty quantification that ART-TREES Section 8 requires. The lower uncertainty of Approach 3 rests on consistent spatial alignment for wall to wall mapping, continuous time series for change detection and consistent spectral values for classification, none of which aggregated statistics (Approach 1) or sample based matrices (Approach 2) can offer because both discard spatial context.
 
-The chapter is structured around the data cube framework for organizing and analyzing spatiotemporal land cover data, followed by uncertainty estimation techniques aligned with IPCC methodologies. We organize the technical content into the following components:
+The chapter first builds the data cube for organizing and analysing land cover data over space and time, then turns to uncertainty estimation aligned with IPCC methods. Sections 3.1 to 3.3 set out the data cube, the array structure for satellite time series, and show how spatial harmonization, temporal gap filling and spectral normalization reduce baseline uncertainty before classification begins. Sections 3.4 to 3.7 assess and improve the training samples through active learning, hierarchical clustering, class balancing and geographic coverage analysis, which address the 20 to 40 per cent of classification uncertainty that comes from inadequate or biased training data. Section 3.8 generates the probability cube and applies Bayesian spatial smoothing, which removes isolated misclassified pixels while keeping real landscape variation and usually improves validation agreement by 10 to 15 per cent over discrete pixel classification. Sections 3.9 and 3.10 apply Monte Carlo cross-validation and stratified accuracy assessment to give the out-of-sample performance estimates that ART-TREES deductions require, with attention to class specific error and the spatial distribution of uncertainty. Section 3.11 gives the complete code for preprocessing, classification and validation, the transparent record that third party verification under REDD+ standards demands.
 
--   Data Cube Architecture (Sections 3.1-3.3): Spatiotemporal array structures for satellite time series, demonstrating how proper cube construction reduces baseline uncertainty through spatial harmonization, temporal gap-filling, and spectral normalization before classification begins.
--   Training Data Enhancement (Sections 3.4-3.7): Sample quality assessment and optimization through active learning, hierarchical clustering, class balancing, and geographic coverage analysis—addressing the 20-40% classification uncertainty stemming from inadequate or biased training data.
--   Classification and Smoothing (Section 3.8): Probability cube generation and Bayesian spatial smoothing that reduces salt-and-pepper noise while preserving legitimate landscape heterogeneity, typically improving validation agreement by 10-15% compared to discrete pixel-based classifications.
--   Uncertainty Quantification (Sections 3.9-3.10): Monte Carlo cross-validation and stratified accuracy assessment providing robust out-of-sample performance estimates required for ART-TREES deduction calculations, with emphasis on class-specific error patterns and spatial uncertainty distributions.
--   Reproducible Workflow (Section 3.11): Complete implementation code for all preprocessing, classification, and validation procedures, enabling transparent methodology documentation required for third-party verification under REDD+ standards.
-
-The subsequent sections demonstrate how systematic application of data cube principles reduces activity data uncertainty from typical scene-based levels of 35-45% to optimized values of 15-25%, directly protecting carbon credit revenues through lower ART-TREES uncertainty deductions while maintaining scientific rigor required for MRV compliance.
+The sections that follow show how systematic use of the data cube reduces activity data uncertainty from the 35 to 45 per cent typical of scene based processing to 15 to 25 per cent, which lowers ART-TREES uncertainty deductions and protects credit revenue while meeting the scientific standard that measurement, reporting and verification (MRV) requires.
 
 ```{r}
 #| warning: false
@@ -72,6 +157,9 @@ The subsequent sections demonstrate how systematic application of data cube prin
 
 # Environment Setup
 # ------------------------
+
+# Allow headless Chrome up to 60 s to start when knitr screenshots a map widget for docx
+options(chromote.timeout = 60)
 
 easypackages::packages(
   "bslib", "caret", "cols4all", "covr", "cowplot", "dendextend", "digest","DiagrammeR", 
@@ -118,30 +206,19 @@ knitr::opts_chunk$set(
 
 ## 3.2 Assemble Data Cube
 
-The `sits` package installation comes pre-loaded with an API library of connections[^index-1] to ARD collections ([Analysis-Ready-Data](https://ceos.org/ard/)) via STAC protocols ([SpatioTemporal Asset Catalogs](https://stacspec.org/en)). This built-in component allows programmatic access to cloud-hosted imagery from AWS, Microsoft Planetary Computer, EarthData, Copernicus many other leading warehouses. However, raw ARD collections present several challenges for classification workflows:
+The `sits` package ships with a library of connections[^index-1] to analysis-ready data collections ([Analysis-Ready-Data](https://ceos.org/ard/), ARD) through the STAC protocol ([SpatioTemporal Asset Catalogs](https://stacspec.org/en)), which gives programmatic access to cloud hosted imagery from AWS, Microsoft Planetary Computer, EarthData, Copernicus and other major warehouses. Raw ARD collections still present three problems for classification. Bands come at different resolutions and must be placed on a common grid without edge anomalies or gaps, revisit intervals vary with orbital geometry, platform scheduling and atmospheric conditions, and cloud leaves missing observations that corrupt the spectral time series.
 
--   Spatial harmonization: Band-specific resolutions require harmonization to common grid avoiding edge anomalies and gaps
--   Temporal harmonization: Revisit cycles vary due to orbital geometry, platform scheduling, and atmospheric conditions
--   Cloud removal: Atmospheric interference introduces missing observations that corrupt spectral time series
-
-For REDD+ monitoring, temporal gaps create systematic underestimation of forest loss when clearing events coincide with cloud-covered periods; a known source of activity data bias requiring explicit quantification in uncertainty budgets. The `sits_regularize()` function provides wrapper to `gdalcubes` operations that transforms heterogeneous imagery into regular or normalized data cubes through coupled spatial and temporal harmonizations.
-
--   Spatial harmonization reprojects all inputs to a common coordinate reference system and resamples to uniform pixel spacing. For instance, fusing Sentinel-1 SAR with Sentinel-2 optical data requires re-projection to the MGRS grid at consistent resolution (typically 10m), ensuring geometric alignment and eliminating co-registration errors that propagate into classification uncertainty.
--   Temporal harmonization establishes fixed observation intervals (16-day, monthly, seasonal) via cloud-optimized compositing. Within each interval, the algorithm ranks available scenes by cloud cover percentage, using the clearest image as reference and filling gaps from progressively cloudier acquisitions. Pixels with persistent cloud contamination are flagged as NA and gap-filled through temporal interpolation during feature extraction.
+For REDD+ monitoring, temporal gaps cause systematic underestimation of forest loss when clearing coincides with cloud, a known source of activity data bias that the uncertainty budget must quantify explicitly. The `sits_regularize()` function wraps `gdalcubes` operations that turn heterogeneous imagery into a regular data cube through linked spatial and temporal harmonization. Spatial harmonization reprojects all inputs to one coordinate reference system and resamples them to uniform pixel spacing, so that fusing Sentinel-1 radar with Sentinel-2 optical data, for instance, requires reprojection to the MGRS grid at a consistent resolution (typically 10m), which aligns the two geometrically and removes the co-registration errors that would otherwise enter classification uncertainty. Temporal harmonization sets fixed observation intervals (16-day, monthly, seasonal) through cloud optimized compositing, in which the algorithm ranks the scenes available in each interval by cloud cover, takes the clearest as reference and fills gaps from progressively cloudier acquisitions, while pixels under persistent cloud are flagged as NA and interpolated in time during feature extraction.
 
 ::: callout-tip
 ## ARD Tile Grids
 
-Sentinel-2 acquisitions are organized according to the Military Grid Reference System (MGRS), which partitions global coverage into 60 longitudinal zones spanning 8° each. Within zones, 6° latitudinal blocks are further subdivided into 110 km × 110 km tiles with 10 km overlap to ensure seamless mosaicking. This tiling structure is critical for REDD+ monitoring systems that track forest change across administrative boundaries, as tile edges can introduce geometric discontinuities if not properly managed during data cube construction.
+Sentinel-2 acquisitions are organized on the Military Grid Reference System (MGRS), which divides the globe into 60 longitudinal zones of 8° each, and within each zone into 6° latitudinal blocks that are subdivided into 110 km × 110 km tiles with 10 km overlap so that mosaics join without gaps. The tiling matters for REDD+ monitoring systems that track forest change across administrative boundaries, because tile edges introduce geometric breaks unless they are managed during data cube construction.
 
-Landsat missions (4,5,7,8,9) employ the Worldwide Reference System-2 (WRS-2), which references scenes by path (descending orbital track) and row (latitudinal frame center). The WRS-2 grid comprises 233 paths globally, each containing 119 rows. All WRS-2 imagery is delivered with geometric correction to UTM projection, facilitating direct integration with ground reference data and cadastral boundaries commonly used in jurisdictional REDD+ accounting. For operational monitoring systems, understanding these tiling schemes is essential for:
-
--   Stratification: Validation samples must account for tile boundaries to avoid spatial clustering
--   Co-registration: Cross-sensor fusion (Landsat-Sentinel) requires explicit handling of differing grid systems
--   Computation: Processing workflows optimized for native tile extents reduce unnecessary resampling and associated geometric errors
+Landsat missions (4,5,7,8,9) use the Worldwide Reference System-2 (WRS-2), which indexes scenes by path (the descending orbital track) and row (the latitudinal frame centre), with 233 paths globally and 119 rows in each. All WRS-2 imagery is delivered geometrically corrected to the Universal Transverse Mercator (UTM) projection, which allows direct integration with the ground reference data and cadastral boundaries used in jurisdictional REDD+ accounting. Operational monitoring systems need to understand these tiling schemes for three reasons. Validation samples must account for tile boundaries to avoid spatial clustering, cross sensor fusion of Landsat and Sentinel requires explicit handling of the two grid systems, and workflows that process at native tile extents avoid needless resampling and the geometric error it adds.
 :::
 
-This analysis replicates methods from @simoes2021satellite, which assembles a data cube from MPC's collection of Sentinel-2 ARD-imagery comprising a single tiled area in the state of Rondonia for the full calendar year of 2022.[^index-2] Following assembly, we normalize raw imagery into a bi-monthly regularized cube below. We specified 10 multispectral bands spanning visible through shortwave infrared wavelengths (B02-B12), plus the B8A narrow NIR band and the CLOUD quality mask for atmospheric filtering.
+This analysis follows the methods of @simoes2021satellite, which assemble a data cube from the Microsoft Planetary Computer collection of Sentinel-2 ARD imagery for a single tile in the state of Rondônia over the full calendar year of 2022.[^index-2] After assembly, the raw imagery was normalized into a regular cube at a bi-monthly interval, as shown below. Ten multispectral bands from visible to shortwave infrared (SWIR) wavelengths (B02-B12) were specified, plus the B8A narrow near infrared (NIR) band and the CLOUD quality mask for atmospheric filtering.
 
 ```{r}
 #| eval: false
@@ -161,25 +238,24 @@ sits::sits_timeline(cube_s2_raw)
 
 ## 3.3 Normalize Data Cube
 
-Although default `sits` operations assemble cubes in the cloud, increased temporal and spatial extents and finer resolutions often require significant processing times. Especially with larger data cube operations, we recommend assembling data cubes in the cloud and downloading copies of the cube imagery to your drive before normalizing imagery into a regular cube from the local directory of downloads. This speeds up operations and avoids network interruptions or queue lags.
+Default `sits` operations assemble cubes in the cloud, but larger extents, longer periods and finer resolutions often take a long time to process. For larger cubes it is better to assemble in the cloud, download a copy of the imagery to a local drive and normalize into a regular cube from that local directory, which speeds the work and avoids network interruptions and queue delays.
 
-Three normalization procedures were implemented to ensure spatiotemporally harmonized analysis-ready dataset:
+Three normalization procedures produced a harmonized analysis-ready dataset. The cloud hosted imagery was first copied to local storage to speed later processing and avoid network interruptions during heavy operations, a step that matters most for large jurisdictional monitoring areas where repeated cloud access would create bottlenecks. The heterogeneous cube was then regularized in space and time with the following parameters.
 
--   Local Download: The cloud-hosted imagery was copied to local storage to accelerate subsequent processing and avoid network interruptions during computationally intensive operations. This step is particularly important for large jurisdictional monitoring areas where repeated cloud access would create bottlenecks.
--   Spatial-Temporal Regularization: The heterogeneous cube was transformed into a regular grid using the following parameters:
-    -   Spatial resolution: 40m uniform pixel spacing (harmonizing the native 10m/20m bands)
-    -   Temporal resolution: 16-day intervals (P16D) aligned with standard phenological monitoring cycles
-    -   Cloud compositing: For each 16-day period, cloud-free pixels were prioritized; gaps filled through temporal interpolation
-    -   Coordinate system: Maintained original UTM Zone 20S projection
+-   Spatial resolution of 40m uniform pixel spacing, harmonizing the native 10m and 20m bands
+-   Temporal resolution of 16-day intervals (P16D), aligned with standard seasonal monitoring cycles
+-   Cloud compositing, in which cloud-free pixels were prioritized within each 16-day period and gaps filled through temporal interpolation
+-   Coordinate system kept as the original UTM Zone 20S projection
 
-This regularization addresses both spatial misalignment between bands and temporal gaps from cloud contamination, the latter being a critical source of activity data bias in REDD+ monitoring when forest clearing coincides with persistent cloud cover.
+This regularization addresses both the spatial misalignment between bands and the temporal gaps from cloud, the latter being a critical source of activity data bias in REDD+ monitoring when forest clearing coincides with persistent cloud cover.
 
--   Spectral Index Derivation: Three vegetation indices were calculated and added to the cube as additional analytical bands:
-    -   NDVI (Normalized Difference Vegetation Index): (NIR - Red) / (NIR + Red); general vegetation vigor
-    -   NBR (Normalized Burn Ratio): (NIR - SWIR2) / (NIR + SWIR2) — burn scar and deforestation detection
-    -   EVI (Enhanced Vegetation Index): 2.5 × (NIR - Red) / (NIR + 6×Red - 7.5×Blue + 1); reduces atmospheric effects
+Three vegetation indices were then calculated and added to the cube as further bands.
 
-The regularized cube structure shows 13 spectral attributes (10 original bands + 3 indices) organized in a spatiotemporal array spanning 23 temporal steps at 40m resolution (see cube structure below). Implementation details are provided in Section 3.11
+-   NDVI, the normalized difference vegetation index, (NIR - Red) / (NIR + Red), a measure of general vegetation vigour
+-   NBR, the normalized burn ratio, (NIR - SWIR2) / (NIR + SWIR2), which detects burn scars and deforestation
+-   EVI, the enhanced vegetation index, 2.5 × (NIR - Red) / (NIR + 6×Red - 7.5×Blue + 1), which reduces atmospheric effects
+
+The regularized cube holds 13 spectral attributes (10 original bands and 3 indices) in an array of 23 time steps at 40m resolution (see the cube structure below), and the full implementation is given in Section 3.11.
 
 ```{r}
 #| eval: false
@@ -276,15 +352,15 @@ plot(rondonia_20LMR, date = "2022-07-16", band = "NDVI")
 
 ## 3.4 Training Data Samples
 
-Training data quality directly determines classification accuracy and, consequently, activity data uncertainty. This analysis uses the `samples_deforestation_rondonia` dataset (n=6,007 signatures) distributed with the `sitsdata` package, comprising nine forest disturbance classes collected through expert visual interpretation of Sentinel-2 imagery representing deforestation events across Rondônia state in the Brazilian Amazon:
+Training data quality sets classification accuracy and therefore activity data uncertainty. This chapter draws on the `samples_deforestation_rondonia` dataset (n=6,007 signatures) distributed with the `sitsdata` package, which holds nine forest disturbance classes labelled by expert visual interpretation of Sentinel-2 imagery of deforestation across Rondônia state in the Brazilian Amazon.
 
--   `Clear_Cut_Bare_Soil`: Post-clearing exposed soil
--   `Clear_Cut_Burned_Area`: Burned clearing residues
--   `Clear_Cut_Vegetation`: Regrowth or residual vegetation post-harvest
--   `Forest`: Intact forest including `Mountainside_Forest`, `Riparian_Forest`
--   `Water`, `Wetland`, `Seasonally_Flooded`: Hydrological features
+-   `Clear_Cut_Bare_Soil`, exposed soil after clearing
+-   `Clear_Cut_Burned_Area`, burned clearing residues
+-   `Clear_Cut_Vegetation`, regrowth or residual vegetation after harvest
+-   `Forest`, intact forest, with `Mountainside_Forest` and `Riparian_Forest`
+-   `Water`, `Wetland` and `Seasonally_Flooded`, hydrological features
 
-The time series spans 2022-01-05 to 2022-12-23 at 16-day intervals, containing 10 Sentinel-2 bands (`B02`, `B03`, `B04`, `B05`, `B06`, `B07`, `B8A`, `B08`, `B11` and `B12`). Temporal validity aligns with the agricultural calendar to capture seasonal dynamics of land conversion.
+The time series runs from 2022-01-05 to 2022-12-23 at 16-day intervals and holds 10 Sentinel-2 bands (`B02`, `B03`, `B04`, `B05`, `B06`, `B07`, `B8A`, `B08`, `B11` and `B12`).
 
 ```{r}
 #| comment: NA
@@ -299,17 +375,11 @@ base::summary(samples_deforestation_rondonia)
 utils::head(samples_deforestation_rondonia)
 ```
 
-We imported the `samples_deforestation_rondonia` reference dataset (n=6,007 labeled time series) from the sitsdata package. This dataset represents expert visual interpretation of Sentinel-2 imagery across nine forest disturbance classes spanning the 2022 monitoring period. The class distribution shows reasonable balance across deforestation stages, with `Riparian_Forest` (20.8%) and `Clear_Cut_Burned_Area` (16.4%) as the most represented classes, while rare classes like Water (1.8%) and Wetland (3.6%) have sufficient samples for model training (\>100 observations each). Each training sample consists of:
+The `samples_deforestation_rondonia` reference dataset (n=6,007 labelled time series) was imported from the `sitsdata` package. The class distribution was reasonably balanced across deforestation stages, with `Riparian_Forest` (20.8 per cent) and `Clear_Cut_Burned_Area` (16.4 per cent) the most represented classes, while the rare classes Water (1.8 per cent) and Wetland (3.6 per cent) still had enough samples for model training (more than 100 observations each). Each training sample held its longitude and latitude in WGS84, a temporal extent from 2022-01-05 to 2022-12-23 (23 acquisition dates), the values of 10 Sentinel-2 bands at 16-day intervals, one of the nine class labels and a reference to the source cube.
 
--   Spatial coordinates: Longitude/latitude in WGS84
--   Temporal extent: 2022-01-05 to 2022-12-23 (23 acquisition dates)
--   Spectral values: 10 Sentinel-2 bands at 16-day intervals
--   Class label: One of nine disturbance categories
--   Cube reference: Source imagery identification
+The temporal span matches the agricultural calendar so that the seasonal course of forest to agriculture conversion is captured, including dry season clearing (May-June) followed by burning (August-September), and this coverage is what allows time series classification to separate the stages of deforestation.
 
-The temporal span aligns with the agricultural calendar to capture seasonal dynamics of forest-to-agriculture conversion, including dry-season clearing (May-June) followed by burning (August-September). This phenological coverage is critical for distinguishing between deforestation stages using time series classification
-
-Visualizing class-specific temporal trajectories aids in assessing spectral separability; a key determinant of classification uncertainty. The `sits_patterns()` function fits generalized additive models (GAM) to training data, producing smoothed temporal signatures that represent idealized class behavior. We derive vegetation indices (NDVI, EVI, NBR) to enhance interpretability.
+Plotting the temporal trajectory of each class helps assess spectral separability, a main determinant of classification uncertainty. The `sits_patterns()` function fits generalized additive models (GAM) to the training data and returns smoothed temporal signatures that represent the idealized behaviour of each class, and the vegetation indices NDVI, EVI and NBR are derived first to make the signatures easier to read.
 
 ```{r}
 #| comment: NA
@@ -330,30 +400,20 @@ training_samples_indices <- training_samples_with_indices |>
   sits::sits_patterns() |> plot()
 ```
 
-To assess spectral separability between classes—a key determinant of classification uncertainty—we calculated vegetation indices (NDVI, EVI, NBR) for all training samples and extracted class-specific temporal patterns using generalized additive models (GAM). These smoothed signatures represent idealized phenological trajectories for each disturbance class.
+The temporal patterns (Figure X) showed distinct seasonal contrasts between classes. The three forest classes (Forest, Mountainside_Forest, Riparian_Forest) kept high and stable NDVI and EVI (above 0.7) through the year with little seasonal variation, as expected of evergreen tropical forest. `Clear_Cut_Bare_Soil` showed an abrupt fall in every index at the time of clearing, with NDVI dropping below 0.2. `Clear_Cut_Burned_Area` showed a sharp SWIR spike (NBR near -0.3) in the August to September dry season, the sign of active burning. `Clear_Cut_Vegetation` showed gradual recovery of NIR and NDVI through the monitoring period, the trajectory of regrowth. The Water and Wetland classes stayed at low NDVI (below 0.3) with seasonal movement in EVI that followed inundation cycles.
 
-The temporal patterns (Figure X) reveal distinct phenological contrasts that enable classification:
-
--   `Forest` classes: (Forest, Mountainside_Forest, Riparian_Forest): High stable NDVI/EVI (\>0.7) throughout the year, with minimal seasonal variation reflecting evergreen tropical forest characteristics
--   `Clear_Cut_Bare_Soil`: Abrupt decline in all indices coinciding with clearing events, with NDVI dropping to \<0.2
--   `Clear_Cut_Burned_Area`: Sharp SWIR spike (low NBR values \~-0.3) during August-September dry season, indicating active burning
--   `Clear_Cut_Vegetation`: Gradual NIR/NDVI recovery through the monitoring period, showing regrowth trajectories
--   `Water/Wetland` classes: Consistently low NDVI (\<0.3) with seasonal fluctuations in EVI reflecting inundation cycles
-
-These temporal contrasts provide the spectral-temporal feature space for subsequent Random Forest classification. Classes with overlapping signatures (e.g., Seasonally_Flooded vs. Wetland) represent known confusion sources requiring careful validation.
+These contrasts form the spectral and temporal feature space for the Random Forest classification that follows, and classes with overlapping signatures, such as Seasonally_Flooded against Wetland, are known sources of confusion that need careful validation.
 
 ## 3.5 Classify Data Cube
 
-Random Forest models provide robust baseline classifiers for activity data, balancing computational efficiency with adequate performance for Tier 2-3 REDD+ requirements. The `sits_train()` function implements parallelized Random Forest training with default hyperparameters optimized for satellite time series.
+Random Forest models are a robust baseline classifier for activity data because they balance computational cost with performance adequate for Tier 2-3 REDD+ requirements, and the `sits_train()` function trains them in parallel with default hyperparameters suited to satellite time series. The algorithm builds an ensemble of decision trees by bootstrap aggregation (bagging), in which each tree is trained on a random subset of samples and features, and the final prediction is the vote across all trees, which gives robust performance without extensive tuning, a real advantage in operational REDD+ systems where calibration time is short.
 
-We trained a Random Forest classifier using the following hyperparameters optimized for satellite time series classification:
+A Random Forest classifier was trained with the following hyperparameters.
 
--   Number of trees: 120 (balancing accuracy and computational efficiency)
--   Variables per split (`mtry`): 10 (approximately √p where p = total features)
--   Training samples: 6,007 labeled time series across 9 classes
--   Input features: 10 spectral bands × 23 temporal observations = 230 features per sample
-
-The Random Forest algorithm constructs an ensemble of decision trees through bootstrap aggregation (bagging), where each tree trains on a random subset of samples and features. Final predictions aggregate votes across all trees, providing robust performance without requiring extensive hyperparameter tuning, critical for operational REDD+ systems where model calibration time is constrained.
+-   Number of trees, 120, balancing accuracy against computational cost
+-   Variables per split (`mtry`), 10, approximately the square root of p where p is the total number of features
+-   Training samples, 6,007 labelled time series across 9 classes
+-   Input features, 10 spectral bands at 23 dates, giving 230 features per sample
 
 ```{r}
 #| comment: NA
@@ -376,37 +436,19 @@ plot(model_randomForest)
 
 #### Variable Importance
 
-The feature importance ranking (Figure X) identifies which bands and temporal observations contribute most to class discrimination:
+The feature importance ranking (Figure X) showed which bands and dates contributed most to separating the classes. The SWIR bands (B11, B12) ranked highest, confirming their value for deforestation detection through their sensitivity to bare soil, and the NIR bands (B8A, B08) ranked second because they respond to vegetation structure and stand in for biomass. Temporal depth mattered, in that observations later in the season, from September to November, carried weight through the seasonal signal that follows clearing, and the red edge bands (B05-B07) were of moderate importance and useful for detecting subtle degradation.
 
--   SWIR bands (B11, B12) show highest importance, confirming importance to deforestation detection due to sensitivity to bare soil
--   NIR bands (B8A, B08) rank second, critical for vegetation structure and biomass proxies
--   Temporal depth matters: Later-season observations September-November carry weights (post-clearing phenology)
--   Red-edge bands (B05-B07) provide moderate importance, useful for subtle degradation detection
-
-Vairable importance ranking informs:
-
--   Sensor planning: Prioritizing SWIR channels in future satellite missions
-
--   Uncertainty attribution: SWIR-band errors propagate more strongly into final classifications
-
--   Transfer learning: When adapting models to new regions, maintaining SWIR coverage is essential.
+The ranking has three uses. It informs sensor planning, in that SWIR channels deserve priority in future satellite missions, it attributes uncertainty, because errors in the SWIR bands pass more strongly into the final classification, and it guides transfer learning, because SWIR coverage must be kept when a model is adapted to a new region.
 
 ## 3.6 Probability Data Cube
 
-Classification outputs are generated as probability cubes rather than discrete label maps to preserve model uncertainty information. The `sits_classify()` function applies trained models to regularized data cubes using fault-tolerant parallel processing, producing per-class probability layers that quantify model confidence at the pixel level.
+Classification output is produced as a probability cube rather than a map of discrete labels so that the model's uncertainty is kept. The `sits_classify()` function applies a trained model to a regularized data cube in fault tolerant parallel processing and writes one probability layer per class, which records the model's confidence at each pixel.
 
-The trained Random Forest model was applied to the regularized data cube using parallelized classification across 4 processing cores with 16GB memory allocation. Rather than producing discrete class labels, the classification generates a probability cube where each pixel contains membership probabilities for all nine classes (summing to 1.0).
+The trained Random Forest was applied to the regularized cube in parallel across 4 processing cores with 16GB of memory. Instead of discrete class labels, the classification produced a probability cube in which each pixel holds membership probabilities for all nine classes, summing to 1.0.
 
-**Why Probability Cubes Matter:**
+A discrete classification discards this uncertainty information, whereas a probability cube keeps the model's confidence at every pixel and so allows four things. A low maximum probability marks high uncertainty at class boundaries and in mixed pixels, so uncertainty can be mapped. Regions of high uncertainty can be given denser sampling during accuracy assessment. The probability distributions feed directly into the Monte Carlo emission uncertainty simulations of Chapter 4. A probability time series also detects gradual transitions that discrete labelling misses.
 
-Traditional discrete classifications discard critical uncertainty information. Probability cubes preserve pixel-level model confidence, enabling:
-
--   Uncertainty mapping: Low maximum probability values indicate high uncertainty at class boundaries or in mixed pixels
--   Adaptive validation: High-uncertainty regions receive greater sampling density during accuracy assessment
--   Monte Carlo propagation: Probability distributions feed directly into emission uncertainty simulations (Chapter 4)
--   Temporal change detection: Probability time series detect gradual transitions but missed discrete labeling
-
-The Forest class probability layer (Figure X) shows high confidence (p \> 0.9, dark green) in intact forest areas, with lower probabilities (p = 0.4-0.7, light green) along forest edges and in degraded patches. These spatial patterns of uncertainty directly inform subsequent validation stratification and area estimation.
+The Forest class probability layer (Figure X) showed high confidence (probability above 0.9, dark green) in intact forest and lower probabilities (0.4-0.7, light green) along forest edges and in degraded patches, spatial patterns of uncertainty that inform the validation stratification and area estimation that follow.
 
 ```{r}
 #| comment: NA
@@ -433,30 +475,25 @@ plot(cube_s2_probs,
 
 ![](https://raw.githubusercontent.com/training-resource/uncertainty/refs/heads/main/03-activity-data/assets/images/png/activity-data-d.png){fig-align="center"}
 
-Each pixel in the probability cube contains `n` probability values (where `n` = number of classes), summing to 1.0. Low maximum probability values indicate pixels with high classification uncertainty, typically occurring at class boundaries, in mixed pixels, or where spectral-temporal signatures deviate from training data. These pixel-level uncertainty metrics support subsequent:
-
--   Adaptive stratification: High-uncertainty pixels receive higher validation sampling density
--   Uncertainty propagation: Probability distributions feed Monte Carlo emission simulations
--   Quality control: Spatial patterns of low confidence identify systematic classification errors
--   Temporal tracking: Probability time series detect gradual transitions missed by discrete labeling
-
-Probability cubes thus serve as the foundation for rigorous uncertainty quantification in subsequent workflow stages.
+Each pixel in the probability cube holds `n` probability values, where `n` is the number of classes, summing to 1.0. A low maximum probability marks a pixel of high classification uncertainty, usually at a class boundary, in a mixed pixel, or where the spectral and temporal signature departs from the training data. Spatial patterns of low confidence also expose systematic classification errors, so the probability cube is the foundation for uncertainty quantification in the rest of the workflow.
 
 ## 3.7 Training Data Enhancements
 
-Classification accuracy in REDD+ monitoring depends critically on training sample quality. Large, well-labeled datasets improve model performance regardless of algorithm choice, while noisy or mislabeled samples degrade classification accuracy and inflate activity data uncertainty [@maxwell2018implementation; @frenay2013classification]. This section demonstrates processing methods to identify problematic samples, reduce class imbalance, and address geographic variance before re-training models.
+Classification accuracy in REDD+ monitoring depends on training sample quality. Large, well labelled datasets improve model performance whatever the algorithm, while noisy or mislabelled samples lower accuracy and inflate activity data uncertainty [@maxwell2018implementation; @frenay2013classification]. This section shows methods for finding problematic samples, reducing class imbalance and addressing geographic variance before models are retrained.
 
 ### Pixel Entropy Sampling
 
-Active learning uses pixel-level classification uncertainty to systematically improve classification accuracy through iterative model refinement [@crawford2013active; @cao2012automatic]. When there is a finite set of alternative classes, the expected value of conflict is given by the Shannon entropy [@shannonMathematicalTheoryCommunication1948]. Entropy may be used to describe the variations in class membership probabilities associated with each pixel. The `sits_uncertainty()` function quantifies four types of uncertainty metrics:
+Active learning uses pixel level classification uncertainty to improve accuracy through repeated rounds of model refinement [@crawford2013active; @cao2012automatic]. For a finite set of alternative classes, the expected conflict between them is given by the Shannon entropy [@shannonMathematicalTheoryCommunication1948], which describes the spread of class membership probabilities at each pixel. The `sits_uncertainty()` function computes four uncertainty metrics, of which entropy is
 
 $$
 \text{H} = -\sum_{i=1}^n Pr(i) \times \log(Pr(i))
 $$
 
-where $Pr(i)$ represents the highest membership probability for pixel $i$ across $n$ classes. For REDD+ applications, the `margin` of confidence typically provides the most actionable results, such as for highlighting transition zones where forest degradation or regeneration creates spectral ambiguity between classes. This margin is defined as the difference between the highest and second-highest class probabilities (Margin = p₁ - p₂), where low values approaching zero indicate ambiguous pixels where the classifier struggles to discriminate between competing classes.
+where $Pr(i)$ is the highest membership probability for pixel $i$ across $n$ classes. For REDD+ work the `margin` of confidence usually gives the most useful result, for instance in marking transition zones where forest degradation or regeneration blurs the spectral difference between classes. The margin is the difference between the highest and second highest class probabilities (Margin = p₁ - p₂), and a value near zero marks a pixel where the classifier cannot separate two competing classes.
 
-The margin uncertainty cube reveals spatial patterns of classification difficulty across the landscape. High uncertainty concentrations appear along forest-agriculture boundaries where mixed pixels contain both forest and bare soil signatures, within wetland complexes where spectral similarity confuses Seasonally_Flooded and Wetland classes, and across regeneration zones where `Clear_Cut_Vegetation` becomes spectrally ambiguous with early-stage `Forest` regrowth. To systematically improve these problematic areas, we identified 300 candidate locations for additional training samples using a minimum uncertainty threshold of margin \< 0.4 with 10-pixel minimum spacing to ensure geographic dispersion. These samples, once labeled through expert interpretation and merged with the original training set for iterative model refinement, typically drive uncertainty convergence within 2-3 iterations.
+The margin uncertainty cube showed where classification was hardest. High uncertainty concentrated along forest to agriculture boundaries where mixed pixels held both forest and bare soil signatures, within wetland complexes where spectral similarity confused the Seasonally_Flooded and Wetland classes, and across regeneration zones where `Clear_Cut_Vegetation` resembled early `Forest` regrowth. To improve these areas systematically, 300 candidate locations for further training samples were selected with a minimum uncertainty threshold of margin below 0.4 and a 10-pixel minimum spacing to spread them geographically.
+
+Once such samples are labelled by expert interpretation and merged with the original training set for another round of training, uncertainty usually converges within 2-3 iterations.
 
 ```{r}
 #| eval: false
@@ -474,7 +511,9 @@ plot(cube_s2_uncertainty, palette = "Oranges")
 
 ![](https://raw.githubusercontent.com/training-resource/uncertainty/refs/heads/main/03-activity-data/assets/images/png/activity-data-l1.png){fig-align="center"}
 
-After extracting spectral signatures for the 300 high-uncertainty locations and retraining the Random Forest model with the expanded dataset (n_total = 6,307), we compared uncertainty maps between model versions to assess improvement. The side-by-side visualizations showed subtle spatial differences, with version 2 exhibiting slightly reduced uncertainty in previously ambiguous forest-wetland transitions. However, the convergence metrics revealed a counterintuitive result where mean uncertainty actually increased slightly in version 2. This pattern suggests that the additional samples exposed previously undetected class overlaps rather than resolving them, revealing legitimate spectral ambiguity that existed but wasn't apparent in the original training set. This demonstrates an important REDD+ lesson: adding training samples doesn't always reduce uncertainty, and proper convergence requires multiple iterations with strategic sample selection until uncertainty metrics stabilize.
+After spectral signatures were extracted for the 300 high uncertainty locations and the Random Forest was retrained on the expanded dataset (n_total = 6,307), the uncertainty maps of the two model versions were compared. Side by side, the maps differed subtly, with version 2 showing slightly less uncertainty in the forest to wetland transitions that had been ambiguous. The convergence metrics gave the opposite result, in that mean uncertainty rose slightly in version 2, a pattern that suggested the added samples had exposed class overlaps that went undetected before rather than resolving them, real spectral ambiguity that was present but not visible in the original training set.
+
+The lesson for REDD+ is that adding training samples does not always reduce uncertainty, and convergence needs several iterations of deliberate sample selection until the uncertainty metrics settle.
 
 ```{r}
 #| eval: false
@@ -595,13 +634,15 @@ uncertainty_check |>
 	flextable::set_table_properties(layout = "autofit", width=1, align = "center") 
 ```
 
-Short class relabelling, the above method showcases an iterative revision workflow typically used to integrate new samples and retrain models until uncertainty stabilizes. For ART-TREES compliance, uncertainty reduction directly decreases activity data deductions and simplifies third-party verification.
+Short of relabelling classes, the method above shows the iterative workflow in which new samples are added and models retrained until uncertainty stabilizes. For ART-TREES compliance, lower uncertainty directly lowers the activity data deduction and simplifies third party verification.
 
 ### Hierarchical Clustering
 
-We implemented two clustering approaches for evaluating training data quality based on dataset size: Agglomerative Hierarchical Clustering (`AHC`) for datasets under 10,000 samples, and Self-Organizing Maps (SOM) for larger collections (Gonçalves et al., 2008; Neagoe et al., 2014; Yao et al., 2016). The computational complexity difference is significant—AHC operates at O(n²) requiring substantial memory, while SOM scales linearly, making it preferable for operational REDD+ monitoring systems processing large reference datasets.
+Two clustering approaches evaluate training data quality, chosen by dataset size, agglomerative hierarchical clustering (`AHC`) for datasets under 10,000 samples and self-organizing maps (SOM) for larger collections (Gonçalves et al., 2008; Neagoe et al., 2014; Yao et al., 2016). The two differ greatly in computational cost, because AHC runs at O(n²), so its cost grows with the square of the sample count and it needs substantial memory, while SOM scales linearly and so suits operational REDD+ monitoring systems that process large reference datasets.
 
-Hierarchical clustering computes dissimilarity between samples using dynamic time warping (DTW), which reliably measures differences in satellite time series by accounting for temporal shifts in phenological patterns (Maus et al., 2019; Petitjean et al., 2012). The sits_cluster_dendro() function generates dendrograms using `DTW` distance with Ward's linkage criterion to minimize within-cluster variance, applied here to NDVI and EVI time series spanning 23 temporal observations per sample. The adjusted Rand index (Rand, 1971) identified seven as the optimal cluster count, and examining the resulting cluster composition revealed distinct groupings that illuminate class separability and potential quality issues.
+Hierarchical clustering computes the dissimilarity between samples with dynamic time warping (DTW), a distance measure that allows for shifts in timing between seasonal patterns and so measures differences between satellite time series reliably (Maus et al., 2019; Petitjean et al., 2012). The `sits_cluster_dendro()` function builds a dendrogram from `DTW` distance with Ward's linkage, which merges clusters so as to minimize within cluster variance.
+
+Here the method was applied to NDVI and EVI time series of 23 observations per sample. The adjusted Rand index (Rand, 1971) identified seven as the best cluster count, and the cluster composition showed distinct groupings that revealed class separability and possible quality problems.
 
 ```{r}
 #| eval: false
@@ -633,7 +674,7 @@ sits::sits_cluster_frequency(clusters)
   Total                 1154 1477  404 1740   89  135 1008  6007
 ```
 
-Cluster 4 strongly dominated by `Clear-cut` classes with 705 `Bare_Soil` and 874 `Burned_Area` samples (1,579 total) demonstrated strong spectral-temporal similarity among cleared areas, while Cluster 2 contained predominantly forest types with 732 `Forest`, 327 `Riparian`, and 145 `Mountainside` samples (1,204 total), confirming these classes share fundamental phenological characteristics. Conversely, Cluster 5 showed high mixture across multiple classes with the lowest purity, suggesting these 89 samples occupy ambiguous spectral space representing either mislabeled observations, edge pixels with mixed land cover, or transitional states not well-represented by discrete classes. We removed Cluster 5 entirely from the training set, and after retaining only dominant labels within remaining clusters through the `sits_cluster_clean()` function, the refined dataset contained 5,893 samples with improved class purity, with only 25 additional samples removed from other clusters.
+Cluster 4 was dominated by the `Clear-cut` classes, with 705 `Bare_Soil` and 874 `Burned_Area` samples (1,579 in total), which showed the strong spectral and temporal similarity among cleared areas, while Cluster 2 held mainly forest types, with 732 `Forest`, 327 `Riparian` and 145 `Mountainside` samples (1,204 in total), confirming that these classes share the same seasonal character. Cluster 5, by contrast, was the least pure and mixed several classes, which suggested its 89 samples occupied ambiguous spectral space as mislabelled observations, edge pixels of mixed cover, or transitional states that discrete classes do not represent well. Cluster 5 was removed from the training set entirely, and after only the dominant label was kept within each remaining cluster through `sits_cluster_clean()`, the refined dataset held 5,893 samples of improved class purity, with only 25 further samples removed from the other clusters.
 
 ```{r}
 #| eval: false
@@ -675,19 +716,23 @@ plot(som_map)
 ![](https://raw.githubusercontent.com/training-resource/uncertainty/refs/heads/main/03-activity-data/assets/images/png/activity-data-h2.png){#fig-som-freq}
 :::
 
-### **Self-Organizing Maps**
+### Self-Organizing Maps
 
-For larger datasets exceeding 10,000 samples, Self-Organizing Maps provide a computationally efficient alternative through unsupervised learning that projects high-dimensional time series onto two-dimensional grids while preserving topological relationships. The sits_som_map() function configured with 10×10 neurons (100 total cells) and DTW distance metric organizes samples such that similar signatures map to nearby neurons, with learning parameters alpha=1.0 and rlen=20 following standard Kohonen optimization. Applied to the full spectral-temporal dataset (10 bands × 23 dates), the SOM evaluation plot reveals class distribution patterns across the neural grid that indicate data quality and class separability.
+For datasets above 10,000 samples, self-organizing maps offer a cheaper alternative, an unsupervised method that projects high dimensional time series onto a two dimensional grid while keeping neighbouring samples together. The `sits_som_map()` function, set to 10×10 neurons (100 cells) with the DTW distance, places similar signatures on nearby neurons, with learning parameters alpha=1.0 and rlen=20 following standard Kohonen practice. Applied to the full spectral and temporal dataset (10 bands × 23 dates), the SOM evaluation plot shows how the classes are distributed across the grid, which indicates data quality and class separability.
 
-Single-class neurons appearing as pure colored cells indicate well-separated classes with distinct spectral signatures, while mixed neurons containing multiple colors reveal spectral confusion requiring investigation, and empty gray cells suggest gaps in feature space not represented by training samples. The SOM frequency map showing neuron activation patterns identifies high-density neurons containing many similar samples and low-density neurons that may represent outliers or rare spectral conditions. Samples from mixed neurons were flagged for expert review, and the SOM-based cleaning through `sits_som_clean_samples`() removed observations from neurons containing multiple classes, improving overall dataset purity while maintaining within-class variability essential for model generalization. This approach proves particularly valuable for operational REDD+ systems processing large reference datasets collected through crowdsourcing or automated methods where quality control becomes challenging at scale.
+A neuron of a single class, shown as a cell of one colour, marks a well separated class with a distinct signature, a mixed neuron of several colours marks spectral confusion that needs investigation, and an empty grey cell marks a gap in feature space that no training sample covers. The SOM frequency map of neuron activation picks out dense neurons that hold many similar samples and sparse neurons that may hold outliers or rare spectral conditions. The approach is most valuable for operational REDD+ systems that process large reference datasets from crowdsourcing or automated collection, where quality control is hard at scale.
+
+Samples from mixed neurons were flagged for expert review, and the cleaning through `sits_som_clean_samples()` removed observations from neurons that held more than one class, which improved dataset purity while keeping the within class variation that a model needs to generalize.
 
 ### Class Imbalances
 
-Imbalanced training sets bias classifiers toward over-represented classes and inflate omission errors for rare forest types, which poses particular problems when those rare classes represent critical high-carbon-stock forests for REDD+ accounting. Our original dataset showed significant imbalance with `Riparian_Forest` at 20.8% and `Clear_Cut_Burned_Area` at 16.4% dominating, while Water at 1.8% and Wetland at 3.6% remained severely under-represented. This 11:1 ratio between majority and minority classes causes Random Forest algorithms to under-predict rare classes through implicit class-frequency weighting during tree construction.
+An imbalanced training set biases a classifier towards the classes with most samples and inflates omission error for rare forest types, a particular problem when those rare classes are the high carbon forests that REDD+ accounting most needs. The original dataset is markedly imbalanced, with `Riparian_Forest` at 20.8 per cent and `Clear_Cut_Burned_Area` at 16.4 per cent dominating while Water at 1.8 per cent and Wetland at 3.6 per cent are severely under-represented. A ratio of 11:1 between the largest and smallest classes leads Random Forest to under-predict rare classes because tree construction implicitly weights classes by frequency.
 
-We applied a hybrid resampling strategy through sits_reduce_imbalance() that combines oversampling and undersampling approaches to achieve balanced representation. The Synthetic Minority Over-sampling Technique (SMOTE) generated synthetic samples for rare classes below 200 observations by creating realistic time series through interpolation between existing samples in feature space, while random undersampling removed samples from majority classes exceeding 400 observations to match minority class frequencies. This dual approach targets all classes toward a 200-400 sample range, reducing the majority:minority ratio from 11:1 to 2:1 while avoiding the pitfalls of either strategy alone—oversampling prevents discarding potentially informative data from majority classes, while undersampling reduces computational load.
+A hybrid resampling strategy was applied through `sits_reduce_imbalance()`, which combines oversampling and undersampling. The synthetic minority oversampling technique (SMOTE) generated synthetic samples for rare classes below 200 observations by interpolating between existing samples in feature space to produce realistic time series, while random undersampling removed samples from majority classes above 400 observations to match the minority class frequencies. This brought every class toward a 200-400 sample range and reduced the ratio of largest to smallest class from 11:1 to 2:1, while avoiding the weakness of either strategy alone, since oversampling kept the informative data that discarding majority samples would lose and undersampling kept the computational load down.
 
-The post-balancing summary demonstrated dramatically improved class distribution with all nine classes falling within the target range, and comparing SOM visualizations before and after balancing revealed the transformation from large clusters dominated by `Riparian_Forest` and `Clear_Cut_Burned_Area` to more uniform distribution across the neural grid with better representation of minority classes. This balanced training improves classifier sensitivity to rare forest types such as degraded riparian forests and seasonally flooded forests that may have high carbon stocks but low spatial extent, directly reducing omission errors in activity data—a critical source of conservative bias in emission estimates under REDD+ accounting frameworks.
+The summary after balancing showed all nine classes within the target range, and comparing the SOM before and after balancing showed the grid change from large clusters dominated by `Riparian_Forest` and `Clear_Cut_Burned_Area` to a more uniform spread with better representation of the minority classes.
+
+A balanced training set makes the classifier more sensitive to rare forest types such as degraded riparian forest and seasonally flooded forest, which may hold high carbon stocks over a small area, and so reduces omission error in the activity data, a critical source of conservative bias in emission estimates under REDD+ accounting.
 
 ```{r}
 #| eval: false
@@ -740,9 +785,9 @@ summary(samples_balanced)
 
 ### Geographic Variance
 
-Training samples must capture spatial variability across the entire monitoring jurisdiction to avoid geographic bias where clustered sampling creates gaps with higher prediction uncertainty due to extrapolation beyond training data conditions (Meyer & Pebesma, 2022). The sits_geo_dist() function quantifies this coverage by comparing two distance distributions: sample-to-sample distances measuring how far apart training points are from each other, and prediction-location-to-sample distances measuring how far each pixel in the study area lies from its nearest training sample. Ideally these distributions should align closely, indicating that every prediction location falls within the same distance range as the training samples are from each other, while mismatched distributions reveal insufficient spatial coverage in certain regions.
+Training samples must cover the spatial variation of the whole monitoring jurisdiction, because clustered sampling leaves gaps where prediction means extrapolating beyond the conditions the training data covered and uncertainty is higher (Meyer & Pebesma, 2022). The `sits_geo_dist()` function measures this coverage by comparing two distance distributions, the distances between training samples and the distances from each prediction pixel in the study area to its nearest training sample. Ideally the two distributions align closely, meaning every prediction location lies within the same range of distances as the training samples lie from each other, and a mismatch reveals regions of insufficient spatial coverage.
 
-The distance distribution plot comparing these two curves identifies geographic gaps where the prediction-to-sample curve extends beyond the sample-to-sample curve, indicating regions requiring additional sampling. For jurisdictional REDD+ monitoring, these gaps often occur in remote protected areas with limited field access, recent deforestation hotspots not captured during original sampling campaigns, and ecotonal boundaries with unique spectral characteristics that deviate from the main training distribution. Addressing these geographic gaps through targeted field campaigns reduces spatial uncertainty and improves model transferability across the full monitoring domain, ensuring that classification accuracy remains consistent rather than degrading in under-sampled regions where verification may be most critical.
+The plot of the two curves identifies geographic gaps wherever the prediction to sample curve extends beyond the sample to sample curve, marking regions that need more sampling. In jurisdictional REDD+ monitoring these gaps often fall in remote protected areas with little field access, in recent deforestation hotspots that postdate the sampling campaign, and at ecological boundaries whose spectral character departs from the main training distribution. Filling them through targeted field campaigns reduces spatial uncertainty and improves model transfer across the whole monitoring domain, so that accuracy stays consistent rather than falling in the under-sampled regions where verification may matter most.
 
 ```{r}
 #| eval: false
@@ -767,13 +812,15 @@ plot(distances)
 
 ![](https://raw.githubusercontent.com/training-resource/uncertainty/refs/heads/main/03-activity-data/assets/images/png/activity-data-j.png){fig-align="center"}
 
-Mismatched distributions indicate insufficient spatial coverage. Areas with few nearby training samples will exhibit higher classification uncertainty, requiring either additional field sampling or explicit uncertainty quantification in those regions during accuracy assessment.
+Where the distributions do not match, areas with few nearby training samples carry higher classification uncertainty and need either more field sampling or explicit quantification of that uncertainty during accuracy assessment.
 
 ### Noise Filtering
 
-Satellite time series contain noise from atmospheric contamination including residual clouds and aerosols, sensor artifacts, and geometric co-registration errors that introduce random variation obscuring genuine phenological patterns. The Whittaker smoother (`sits_whittaker()`) applies penalized least squares regression to balance fidelity to observed values against temporal smoothness, controlled by parameter lambda where low values preserve more detail and high values enforce stronger smoothing. Applied with conservative lambda=0.5, the filtering preserved legitimate rapid changes such as abrupt deforestation events while removing high-frequency noise that degraded classification accuracy.
+Satellite time series carry noise from residual cloud and aerosol, sensor artefacts and co-registration error, random variation that hides the real seasonal pattern. The Whittaker smoother (`sits_whittaker()`) fits a penalized least squares regression that trades fidelity to the observed values against smoothness over time, controlled by the parameter lambda, where a low value keeps more detail and a high value smooths more strongly.
 
-Comparing filtered versus original time series across representative classes revealed the smoothing clarified underlying temporal trends; `Clear_Cut_Bare_Soil` showed declining `NDVI` with sharp fluctuations reduced, `Forest` maintained stable high-`NDVI` phenology with minor fluctuations eliminated, `Clear_Cut_Burned_Area` revealed abrupt drops during burning events more clearly, and `Seasonally_Flooded` preserved seasonal oscillation patterns while reducing measurement noise. For REDD+ applications, conservative filtering with lambda ≤ 1.0 is recommended to avoid smoothing over short-duration clearing events that represent genuine forest loss, ensuring that the filtered training samples provide cleaner inputs for model training while preserving the temporal dynamics essential for accurate activity data classification. Implementation details for all enhancement procedures are provided in Section 3.11.
+Applied here with a conservative lambda=0.5, the filter kept real rapid changes such as abrupt deforestation while removing the high frequency noise that had lowered classification accuracy. Comparing filtered against original series for representative classes showed that the smoothing clarified the underlying trend, in that `Clear_Cut_Bare_Soil` showed its declining `NDVI` with sharp fluctuations reduced, `Forest` kept its stable high `NDVI` with minor fluctuations removed, `Clear_Cut_Burned_Area` showed the abrupt drop at burning more clearly, and `Seasonally_Flooded` kept its seasonal oscillation with less measurement noise.
+
+For REDD+ work a conservative lambda ≤ 1.0 is recommended, so that short clearing events that are real forest loss are not smoothed away, and the filtered training samples then give cleaner inputs for model training while keeping the temporal dynamics that accurate activity data classification needs. Implementation details for all enhancement procedures are given in Section 3.11.
 
 ```{r}
 #| eval: false
@@ -826,17 +873,15 @@ sits::sits_merge(
 ![](https://raw.githubusercontent.com/training-resource/uncertainty/refs/heads/main/03-activity-data/assets/images/png/activity-data-k8b.png)
 :::
 
-Over-smoothing (high lambda values) eliminates legitimate phenological variation, reducing model discriminatory power. Conservative filtering (lambda ≤ 1.0) balances noise reduction with pattern preservation [@Atkinson2012; @Zhou2016].
+Over-smoothing with a high lambda removes real seasonal variation and weakens the model's ability to separate classes, whereas conservative filtering (lambda ≤ 1.0) balances noise reduction against pattern preservation [@Atkinson2012; @Zhou2016].
 
-Integration with Uncertainty Workflows: Quality-controlled training data directly reduces classification uncertainty by minimizing systematic errors from mislabeling and improving model generalization. Combined with the cross-validation procedures in Section 3.8 and accuracy assessment in Section 3.9, these enhancement methods establish a rigorous foundation for defensible activity data uncertainty quantification under ART-TREES requirements.
+Quality controlled training data reduces classification uncertainty directly, by cutting the systematic error from mislabelling and improving how well the model generalizes. Together with the cross-validation of Section 3.8 and the accuracy assessment of Section 3.9, these enhancement methods give a defensible basis for quantifying activity data uncertainty under ART-TREES.
 
 ## 3.8 Smooth Data Cube
 
-Pixel-based classification inherently produces salt-and-pepper noise due to within-class spectral variability and mixed pixels. Isolated misclassified pixels surrounded by different classes represent systematic over-fitting to training data rather than true landscape heterogeneity, inflating area uncertainty and complicating change detection in REDD+ applications. The sits_smooth() function addresses this through Bayesian post-processing that incorporates spatial context from neighboring pixels to refine probability estimates. The algorithm computes spatially-weighted probability adjustments based on neighborhood composition, then updates pixel probabilities using Bayesian inference that combines original model estimates with spatial priors derived from surrounding pixels. This process produces a refined probability cube with reduced outlier effects while preserving legitimate small patches that represent genuine landscape features rather than classification artifacts.
+Pixel based classification produces isolated misclassified pixels, called salt-and-pepper noise, because of spectral variation within classes and mixed pixels. An isolated pixel labelled differently from all its neighbours usually reflects over-fitting to the training data rather than real landscape variation, and it inflates area uncertainty and complicates change detection in REDD+ work. The `sits_smooth()` function addresses this through Bayesian post-processing that uses the neighbouring pixels to refine each probability estimate. The algorithm computes a spatially weighted adjustment from the composition of the neighbourhood, then updates each pixel's probabilities by Bayesian inference that combines the original model estimate with the spatial prior drawn from the surrounding pixels, giving a refined probability cube with fewer outliers that still keeps the small patches that are real landscape features.
 
-The smoothed Forest probability map (Figure X) demonstrates the effect—high-confidence pixels (p \> 0.9) appear in dark green representing intact forest cores, while transitional zones along forest edges show moderate probabilities (p = 0.4-0.7) in lighter green, reflecting genuine mixed-pixel conditions rather than random noise. Spatial smoothing affects activity data uncertainty in competing directions that must be carefully balanced. The approach reduces random error by eliminating isolated misclassifications that inflate variance, and typically improves validation agreement by aligning with human interpretation scales that naturally incorporate spatial context. However, smoothing introduces potential spatial bias by potentially smoothing over legitimate small-scale heterogeneity, and modifies probability distributions in ways that change pixel-level uncertainty estimates. For REDD+ reporting, smoothed probability cubes typically yield lower reported uncertainties due to reduced classification noise, but verification bodies may require documentation of smoothing parameters demonstrating that methodological choices preserve ecologically meaningful patterns.
-
-Final classified maps derive from smoothed probability cubes through maximum likelihood labeling where each pixel receives the class with highest posterior probability. The `sits_label_classification()` function performs this deterministic assignment while maintaining provenance links to underlying probability distributions, ensuring that uncertainty information remains accessible for subsequent Monte Carlo emission simulations. The classified cube (Figure X) showing all nine disturbance classes provides the activity data foundation for REDD+ accounting, though full uncertainty quantification requires additional analysis beyond discrete classification. The advanced procedures in Sections 3.9-3.10 using caret and terra packages address this need through stratified validation with area-adjusted accuracy assessment and Monte Carlo calibration workflows for robust uncertainty estimation. Implementation details for smoothing and labeling procedures are provided in Section 3.10.
+The smoothed Forest probability map (Figure X) showed the effect, with high confidence pixels (probability above 0.9) in dark green in intact forest cores and moderate probabilities (0.4-0.7) in lighter green along forest edges, reflecting real mixed pixels rather than random noise.
 
 ```{r}
 #| comment: NA
@@ -866,19 +911,12 @@ plot(cube_s2_bayes,
 ::: callout-note
 ## Smoothing Risks
 
-Spatial smoothing affects activity data uncertainty in competing directions:
-
--   Reduces random error: Eliminates isolated misclassifications that inflate variance
--   Introduces spatial bias: May smooth over legitimate small-scale heterogeneity
--   Improves validation agreement: Better alignment with typical human interpretation scales
--   Modifies probability distributions: Changes the shape of pixel-level uncertainty estimates
-
-For REDD+ reporting, smoothed probability cubes typically yield lower reported uncertainties due to reduced classification noise, but verification bodies may require documentation of smoothing parameters demonstrating methodological choices.
+Spatial smoothing moves activity data uncertainty in competing directions. It reduces random error by removing the isolated misclassifications that inflate variance, and it improves validation agreement by matching the scale at which a human interpreter reads the landscape, but it can introduce spatial bias by smoothing over real small scale variation, and it changes the shape of the pixel level probability distributions and so of the uncertainty estimates drawn from them. For REDD+ reporting, a smoothed probability cube usually yields lower reported uncertainty because classification noise is lower, but verification bodies may require documentation of the smoothing parameters to show that the choice preserved ecologically meaningful patterns.
 :::
 
 ------------------------------------------------------------------------
 
-Final classified maps are derived from smoothed probability cubes through maximum likelihood labeling: each pixel is assigned the class with highest posterior probability. The `sits_label_classification()` function performs this deterministic assignment while maintaining provenance links to underlying probability distributions.
+The final classified map is derived from the smoothed probability cube by maximum likelihood labelling, in which each pixel receives the class with the highest posterior probability. The `sits_label_classification()` function makes this deterministic assignment while keeping the link to the underlying probability distributions, so that uncertainty information stays available for the Monte Carlo emission simulations later. Implementation details for smoothing and labelling are given in Section 3.10.
 
 ```{r}
 #| comment: NA
@@ -903,19 +941,15 @@ plot(cube_s2_lulc, legend_text_size = 0.7)
 
 ![Classified cube obtained by Random Forest model.](https://raw.githubusercontent.com/training-resource/uncertainty/refs/heads/main/03-activity-data/assets/images/png/activity-data-f.png)
 
-The classified cube produced by `sits` workflows provides the activity data foundation for REDD+ accounting, but uncertainty quantification requires additional analysis beyond the discrete classification procedures. Sections 3.2-3.5 demonstrate more more advanced operations using `caret` [@kuhn2011caret], `ForestToolbox` [@ForesToolboxRS], and `terra` packages [@terra-2] required to:
-
-1.  Extract pixel-level probability distributions for Monte Carlo sampling (Section 3.3)
-2.  Implement stratified validation with area-adjusted accuracy assessment (Section 3.4)
-3.  Calibrate Random Forest hyperparameters through iterative uncertainty minimization (Section 3.5)
+The classified cube (Figure X) with its nine disturbance classes is the activity data foundation for REDD+ accounting, but uncertainty quantification needs more than discrete classification. Sections 3.2-3.5 show more advanced operations with the `caret` [@kuhn2011caret], `ForestToolbox` [@ForesToolboxRS] and `terra` [@terra-2] packages, which extract pixel level probability distributions for Monte Carlo sampling (Section 3.3), implement stratified validation with area adjusted accuracy assessment (Section 3.4) and calibrate Random Forest hyperparameters through iterative uncertainty minimization (Section 3.5).
 
 ------------------------------------------------------------------------
 
 ## 3.8 Cross-Validation
 
-Cross-validation quantifies model generalization capacity by partitioning training data into independent subsets for iterative testing. To integrate sits time series data with caret-based validation workflows, we first converted the nested time series structure into a tabular feature matrix suitable for Monte Carlo simulation. For each of the 6,007 training samples, we extracted six statistical summaries across the temporal dimension: mean and standard deviation for NIR (`B8A`), SWIR (`B11`), and `NDVI`. This feature engineering reduces the 230-dimensional input space (10 bands × 23 dates) to a 6-dimensional summary statistics space that enables rapid iterative testing while maintaining discriminatory power for the nine disturbance classes. Although this simplified representation loses some temporal resolution compared to the full time series used in sits classification, it provides computational efficiency essential for Monte Carlo simulation requiring thousands of iterations to achieve ART-TREES compliance.
+Cross-validation measures how well a model generalizes by splitting the training data into independent subsets for repeated testing. Bringing `sits` time series into a `caret` validation workflow requires converting the nested time series structure into a tabular feature matrix suited to Monte Carlo simulation, and for each of the 6,007 training samples six statistics are taken over time, the mean and standard deviation of NIR (`B8A`), SWIR (`B11`) and `NDVI`. This reduces the 230 dimensional input (10 bands × 23 dates) to a 6 dimensional space of summary statistics that allows rapid repeated testing while keeping the power to separate the nine disturbance classes. The simplified representation loses some temporal detail compared with the full series that `sits` classifies, but it gives the speed that a Monte Carlo simulation of thousands of iterations needs for ART-TREES compliance.
 
-Now, let's Extract statistical summaries from `sits` time series for `caret` compatibility:
+The code below extracts the statistical summaries from the `sits` time series for use in `caret`.
 
 ```{r}
 #| eval: true
@@ -942,9 +976,11 @@ train_features <- extract_features(samples_deforestation_rondonia)
 
 ### Monte Carlo Cross-Validation
 
-We implemented Monte Carlo Leave-Group-Out Cross-Validation (LGOCV) to quantify model stability and generalization capacity through repeated random partitioning. The simulation configuration used 75% calibration and 25% validation splits across 10 iterations for demonstration purposes, though ART-TREES requirements for activity data uncertainty demand 10,000 iterations for statistically robust performance estimates. This dramatic increase from demonstration to operational scale reflects the need to stabilize mean performance estimates, quantify variance across different data partitions, capture rare failure modes in specific train-test combinations, and meet statistical significance thresholds for MRV reporting. Each iteration randomly partitioned the feature dataset while maintaining class proportions, fitted a Random Forest with 120 trees optimized for Kappa statistic (which accounts for class imbalance better than raw accuracy), and generated predictions on the withheld validation set.
+Monte Carlo leave-group-out cross-validation (LGOCV) was run to measure model stability and generalization through repeated random partitioning. For demonstration the simulation used 75 per cent calibration and 25 per cent validation splits over 10 iterations, whereas ART-TREES requirements for activity data uncertainty demand 10,000 iterations for statistically robust estimates, an increase needed to stabilize the mean performance, quantify the variance between partitions, catch rare failures in particular train and test combinations, and meet the significance thresholds of MRV reporting. Each iteration partitioned the feature dataset at random while keeping class proportions, fitted a Random Forest of 120 trees tuned on the Kappa statistic (which allows for class imbalance better than raw accuracy) and predicted the withheld validation set.
 
-The cross-validation summary demonstrates model stability across iterations with mean accuracy of 70.9% (±1.5%) and mean Kappa of 0.656 (±0.017). The low standard deviations indicate consistent performance despite random partitioning, suggesting the model generalizes well to unseen data. However, the moderate Kappa value around 0.66 indicates room for improvement through additional training samples in confused classes, hyperparameter optimization, or integration of ancillary data such as elevation or soil maps. These metrics would feed directly into ART-TREES Equation 11 for activity data uncertainty deductions, where the relative standard deviation of cross-validated predictions determines the half-width of the 90% confidence interval used in carbon credit calculations. The demonstration with 10 iterations provides proof-of-concept, but operational implementation requires scaling to thousands of iterations to meet ART-TREES statistical confidence requirements.
+The cross-validation summary showed a stable model across iterations, with mean accuracy of 70.9 per cent (standard deviation 1.5 per cent) and mean Kappa of 0.656 (standard deviation 0.017). The low standard deviations showed consistent performance whatever the partition and suggested the model generalized well to unseen data, though a Kappa near 0.66 left room for improvement through more training samples in the confused classes, hyperparameter tuning, or ancillary data such as elevation or soil maps.
+
+These metrics feed directly into ART-TREES Equation 11 for the activity data uncertainty deduction, where the relative standard deviation of the cross-validated predictions sets the half-width of the 90 per cent confidence interval used in credit calculations. The 10 iteration demonstration is a proof of concept, and operational use requires thousands of iterations to meet the ART-TREES confidence requirements.
 
 ```{r}
 #| eval: true
@@ -986,11 +1022,11 @@ flextable::flextable(model_randomRandom_mc_summary) |>
 
 ## 3.9 Accuracy Assessment
 
-Accuracy assessment quantifies classification performance against independent reference data through stratified train-test partitioning that ensures adequate representation across all nine forest disturbance classes. We partitioned the feature dataset into training (80%, n≈4,806) and testing (20%, n≈1,201) subsets using stratified random sampling that maintains original class proportions in both subsets. This prevents bias from over- or under-representing rare classes during evaluation, which becomes critical given our 11:1 imbalance between majority and minority classes. All class labels were converted to factors with consistent levels across training and testing sets to prevent errors when rare classes appear in only one subset—a common issue with imbalanced datasets that causes prediction failures during validation. The model trained on the 80% calibration set with 120 Random Forest trees was then evaluated on the withheld 20% test set to generate confusion matrix statistics.
+To measure classification performance against independent reference data with all nine disturbance classes adequately represented, the feature dataset was split into training (80 per cent, n≈4,806) and test (20 per cent, n≈1,201) subsets by stratified random sampling that kept the original class proportions in both, which prevented rare classes being over or under represented in the evaluation, a real risk given the 11:1 imbalance between largest and smallest classes. All class labels were converted to factors with the same levels in both sets, so that a rare class present in only one subset would not cause prediction failure during validation, a common fault with imbalanced data. The model trained on the 80 per cent calibration set with 120 Random Forest trees was then evaluated on the withheld 20 per cent test set to produce the confusion matrix.
 
-The confusion matrix quantifies classification performance by comparing predicted labels against reference labels for the 1,201 withheld test samples, revealing both overall accuracy and class-specific error patterns critical for REDD+ uncertainty assessment. Overall performance achieved 73.9% accuracy (95% CI: 71.4-76.4%) with Kappa of 0.692, significantly better than random assignment (p \< 2.2e-16) and indicating moderate agreement beyond chance. Class-specific performance varied dramatically, with high-performing classes achieving sensitivity above 85%—Water reached 100% sensitivity with 95.5% precision through its distinctive spectral signature, Riparian_Forest achieved 88% sensitivity despite constituting 20.8% of the dataset, and `Forest` showed 86.5% sensitivity representing core forest discrimination. Moderate performers included `Clear_Cut_Burned_Area` at 73.5% sensitivity, `Seasonally_Flooded` at 69.2%, and `Clear_Cut_Bare_Soil` at 69.2%, while `Mountainside_Forest` suffered severe under-`prediction` at only 7.1% sensitivity.
+The confusion matrix compared predicted with reference labels for the 1,201 withheld test samples and gave both overall accuracy and the class specific error that REDD+ uncertainty assessment needs. Overall accuracy was 73.9 per cent (95 per cent confidence interval 71.4 to 76.4 per cent) with Kappa of 0.692, significantly better than random assignment (p \< 2.2e-16) and indicating moderate agreement beyond chance. Class performance varied widely, in that the best classes reached sensitivity above 85 per cent, with Water at 100 per cent sensitivity and 95.5 per cent precision through its distinctive spectral signature, Riparian_Forest at 88 per cent sensitivity despite making up 20.8 per cent of the dataset, and `Forest` at 86.5 per cent, the core forest discrimination. `Clear_Cut_Burned_Area` at 73.5 per cent sensitivity, `Seasonally_Flooded` at 69.2 per cent and `Clear_Cut_Bare_Soil` at 69.2 per cent were moderate, while `Mountainside_Forest` was severely under-predicted at only 7.1 per cent sensitivity.
 
-The critical failure in `Mountainside_Forest` classification with 7.1% sensitivity stems from its low prevalence in the training set (3.5% of samples), spectral overlap with other forest types, and topographic effects not captured in spectral features alone. Key confusion patterns emerged between `Clear_Cut_Bare_Soil` and `Clear_Cut_Burned_Area` (72 total misclassifications) due to similar bare soil signatures, among forest types (`Forest`, `Mountainside_Forest`, `Riparian_Forest`) sharing vegetation characteristics, and between hydrological classes (`Seasonally_Flooded` and Wetland`)` with overlapping seasonal inundation dynamics. For REDD+ implications, the 73.9% accuracy translates to approximately 26% activity data uncertainty before applying ART-TREES area adjustment corrections. Class-specific errors, particularly the Mountainside_Forest omissions, would inflate uncertainty in jurisdictions with significant topographic variability, requiring either targeted training sample augmentation for rare classes, stratified validation with higher sampling density in confused regions, or integration of DEM-derived topographic variables as additional features. Implementation details for accuracy assessment procedures are provided in Section 3.10.
+The failure on `Mountainside_Forest` at 7.1 per cent sensitivity came from its low prevalence in the training set (3.5 per cent of samples), its spectral overlap with the other forest types, and topographic effects that spectral features alone do not capture. The main confusions were between `Clear_Cut_Bare_Soil` and `Clear_Cut_Burned_Area` (72 misclassifications in total) through their similar bare soil signatures, among the forest types (`Forest`, `Mountainside_Forest`, `Riparian_Forest`) through shared vegetation character, and between the hydrological classes `Seasonally_Flooded` and `Wetland` through overlapping seasonal inundation. For REDD+, 73.9 per cent accuracy corresponded to roughly 26 per cent activity data uncertainty before the ART-TREES area adjustment. Class specific error, above all the `Mountainside_Forest` omissions, would inflate uncertainty in jurisdictions with strong relief, which calls for more training samples in rare classes, stratified validation with denser sampling in confused regions, or topographic variables from a digital elevation model (DEM) as further features. Implementation details for accuracy assessment are given in Section 3.10.
 
 ```{r}
 #| eval: true
@@ -1528,35 +1564,29 @@ predictions <- factor(predictions, levels = all_classes)
 
 ## 3.11 Chapter Summary {#sec-summary}
 
-This chapter established a comprehensive framework for activity data uncertainty quantification in REDD+ monitoring systems. Key contributions include:
+This chapter set out a framework for quantifying activity data uncertainty in REDD+ monitoring. It covered the data cube as the structure for land cover analysis over space and time, the requirements of IPCC Approach 3, pixel level uncertainty tracking through model residuals for adaptive sampling, Random Forest optimization through Monte Carlo calibration, and accuracy assessment through confusion matrices with area adjustment.
 
-1.  Data cube architecture: Structured approach to spatiotemporal land cover analysis
-2.  IPCC methodology alignment: Clear guidance on Approach 3 requirements
-3.  Pixel-level uncertainty tracking: Model residuals for adaptive sampling
-4.  Random Forest optimization: Monte Carlo calibration workflows
-5.  Rigorous accuracy assessment: Confusion matrices with area adjustment
-
-Activity data provides spatial extent; allometry converts extent to biomass. Combined uncertainty requires:
+Activity data gives the area of change and allometry converts that area to biomass, so the combined uncertainty is
 
 $$
 U_{total}^2 = U_{activity}^2 + U_{allometry}^2 + 2 \times \text{Cov}(A, B)
 $$
 
-Where covariance term captures spatial correlation between classification errors and biomass estimation errors.
+where the covariance term captures the spatial correlation between classification error and biomass estimation error.
 
-[^index-1]: In version 1.5.3,`sits` supports access to the following ARD image cloud providers:
+[^index-1]: In version 1.5.3, `sits` supports access to the following ARD image cloud providers.
 
-    -   Amazon Web Services (AWS): Open data Sentinel-2/2A Level-2A collections for the Earth’s land surface.
-    -   Brazil Data Cube (BDC): Open data collections of Sentinel-2/2A, Landsat-8, CBERS-4/4A, and MOD13Q1 products for Brazil. These collections are organized as regular data cubes.
-    -   Copernicus Data Space Ecosystem (CDSE): Open data collections of Sentinel-1 RTC and Sentinel-2/2A images.
-    -   Digital Earth Africa (DEAFRICA): Open data collections of Sentinel-1 RTC, Sentinel-2/2A, Landsat-5/7/8/9 for Africa. Additional products include ALOS_PALSAR mosaics, DEM_COP_30, NDVI_ANOMALY based on Landsat data, and monthly and daily rainfall data from CHIRPS.
-    -   Digital Earth Australia (DEAUSTRALIA): Open data ARD collections of Sentinel-2A/2B and Landsat-5/7/8/9 images, yearly geomedians of Landsat 5/7/8 images; yearly fractional land cover from 1986 to 2024.
-    -   Harmonized Landsat-Sentinel (HLS): HLS, provided by NASA, is an open data collection that processes Landsat 8 and Sentinel-2 imagery to a common standard.
-    -   Microsoft Planetary Computer (MPC): Open data collections of Sentinel-1 GRD, Sentinel-1 RTC, Sentinel-2/2A, Landsat-4/5/7/8/9 images for the Earth’s land areas. Also supported are the Copernicus DEM-30 and MOD13Q1, MOD10A1, MOD09A1 products, and the Harmonized Landsat-Sentinel collections (HLSL30 and HLSS30).
-    -   Swiss Data Cube (SDC): Collection of Sentinel-2/2A and Landsat-8 images for Switzerland.
-    -   Terrascope: Cloud service with EO products, which includes the ESA World Cover map.
-    -   USGS: Landsat-4/5/7/8/9 collections available in AWS, which require access payment.
+    -   Amazon Web Services (AWS), open data Sentinel-2/2A Level-2A collections for the Earth's land surface.
+    -   Brazil Data Cube (BDC), open data collections of Sentinel-2/2A, Landsat-8, CBERS-4/4A and MOD13Q1 products for Brazil, organized as regular data cubes.
+    -   Copernicus Data Space Ecosystem (CDSE), open data collections of Sentinel-1 RTC and Sentinel-2/2A images.
+    -   Digital Earth Africa (DEAFRICA), open data collections of Sentinel-1 RTC, Sentinel-2/2A and Landsat-5/7/8/9 for Africa, with ALOS_PALSAR mosaics, DEM_COP_30, NDVI_ANOMALY based on Landsat data, and monthly and daily rainfall data from CHIRPS.
+    -   Digital Earth Australia (DEAUSTRALIA), open data ARD collections of Sentinel-2A/2B and Landsat-5/7/8/9 images, yearly geomedians of Landsat 5/7/8 images, and yearly fractional land cover from 1986 to 2024.
+    -   Harmonized Landsat-Sentinel (HLS), an open data collection from NASA that processes Landsat 8 and Sentinel-2 imagery to a common standard.
+    -   Microsoft Planetary Computer (MPC), open data collections of Sentinel-1 GRD, Sentinel-1 RTC, Sentinel-2/2A and Landsat-4/5/7/8/9 images for the Earth's land areas, with the Copernicus DEM-30, the MOD13Q1, MOD10A1 and MOD09A1 products, and the Harmonized Landsat-Sentinel collections (HLSL30 and HLSS30).
+    -   Swiss Data Cube (SDC), a collection of Sentinel-2/2A and Landsat-8 images for Switzerland.
+    -   Terrascope, a cloud service with EO products, including the ESA World Cover map.
+    -   USGS, Landsat-4/5/7/8/9 collections available in AWS, which require access payment.
 
-    In addition, `sits` supports the use of Planet monthly mosaics stored as local files. For a detailed description of the providers and collections supported by `sits`, please run `sits_list_collections()`.
+    `sits` also supports Planet monthly mosaics stored as local files. For a full description of the providers and collections supported by `sits`, run `sits_list_collections()`.
 
-[^index-2]: For addressing the most problematic uncertainty tasks needing longitudinal analyses of extended timelines (1984-2024), such as disaggregation of wildfire uncertainty and the inter-annual variability of natural disturbances, we recommend practicing data cube operations with Landsat imagery [@ipccReportConferenceParties2012, pp. 847; @ipccChapter2Generic2019, pp. 2.67; @ipcc2013RevisedSupplementary2014, pp. O.9; @unfccc2010report, pp. 17-18].
+[^index-2]: For the hardest uncertainty tasks, which need longitudinal analysis over long timelines (1984-2024), such as separating wildfire uncertainty and the year to year variability of natural disturbance, practising data cube operations on Landsat imagery is recommended [@ipccReportConferenceParties2012, pp. 847; @ipccChapter2Generic2019, pp. 2.67; @ipcc2013RevisedSupplementary2014, pp. O.9; @unfccc2010report, pp. 17-18].
